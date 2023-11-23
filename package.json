@@ -1,0 +1,35 @@
+{
+  "name": "@flyo/nitro-js-bridge",
+  "version": "1.0.0",
+  "description": "Flyo Nitro JS Bridge",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/nitro-js-bridge.umd.cjs",
+  "module": "./dist/nitro-js-bridge.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nitro-js-bridge.js",
+      "require": "./dist/nitro-js-bridge.umd.cjs"
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/node": "^20.9.4",
+    "typescript": "^5.3.2",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^3.6.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@tiptap/html": "^2.1.12",
+    "@tiptap/pm": "^2.1.12",
+    "@tiptap/starter-kit": "^2.1.12"
+  }
+}
