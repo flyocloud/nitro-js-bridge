@@ -1,6 +1,6 @@
 {
   "name": "@flyo/nitro-js-bridge",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Flyo Nitro JS Bridge",
   "license": "MIT",
   "type": "module",
@@ -26,13 +26,5 @@
   },
   "files": [
     "dist"
-  ],
-  "dependencies": {
-    "@tiptap/extension-image": "^2.1.12",
-    "@tiptap/extension-link": "^2.1.12",
-    "@tiptap/extension-youtube": "^2.1.12",
-    "@tiptap/html": "^2.1.12",
-    "@tiptap/pm": "^2.1.12",
-    "@tiptap/starter-kit": "^2.1.12"
-  }
+  ]
 }
