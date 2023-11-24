@@ -10,6 +10,7 @@ function wysiwyg(json: any, nodeRenderers: any) {
     bulletList: ({ content }: { content: any[] }, renderNode: any) => `<ul>${content.map(child => `<li>${renderNode(child)}</li>`).join('')}</ul>`,
     orderedList: ({ content }: { content: any[] }, renderNode: any) => `<ol>${content.map(child => `<li>${renderNode(child)}</li>`).join('')}</ol>`,
     listItem: ({ content }: { content: any[] }, renderNode: any) => `${content.map(child => renderNode(child)).join('')}`,
+    hardBreak: () => `<br />`,
     blockquote: ({ content }: { content: any[] }, renderNode: any) => `<blockquote>${content.map(child => renderNode(child)).join('')}</blockquote>`,
     image: ({ attrs }: { attrs: { src: string, alt: string, title: string } }) => `<img src="${attrs.src}" alt="${attrs.alt}" title="${attrs.title}" />`,
     youtube: ({ attrs }: { attrs: { src: string, start: string } }) => `<iframe width="560" height="315" src="${attrs.src}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`,
