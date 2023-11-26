@@ -1,6 +1,6 @@
 
 // Rendering logic for the updated ProseMirror JSON
-function wysiwyg(json: any, nodeRenderers: any) {
+function wysiwyg(json: any, nodeRenderers?: any) {
 
   const defaultNodeRenderers = {
     default: ({ type }: { type: any[] }) => `<div style="border:1px solid red">Node "${type}" is not defined.</div>`,
