@@ -42,6 +42,28 @@ test('basicExample', () => {
   // Fügen Sie hier weitere Tests für andere Knoten- und Markierungstypen hinzu
 });
 
+test('xssTest', () => {
+  const sampleJSON = {
+    type: 'doc',
+    content: [
+      {
+        type: 'heading',
+        attrs: { level: 1 },
+        content: [
+          {
+            type: 'text',
+            text: '<script>alert("XSS")</script>',
+          },
+        ],
+      },
+    ],
+  };
+
+  const html = wysiwyg(sampleJSON)
+
+  expect(html).toBe('<h1>&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;</h1>');
+});
+
 test('customElements', () => {
   const sampleJSON = {
     type: 'doc',
