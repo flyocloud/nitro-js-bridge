@@ -2,6 +2,12 @@
 
 This is can be used in backend and frontend projects eitherway to make the bridge between Flyo Cloud and your application.
 
+## Installation
+
+```js
+npm i @flyo/nitro-js-bridge
+```
+
 ## WYSIWYG Custom Render
 
 Since flyo uses ProseMirror/TipTap Json, we have built a custom renderer for you to use in your application in order to handle custom nodes and extend the default ones, for example image:
