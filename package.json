@@ -28,5 +28,20 @@
   },
   "files": [
     "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flyocloud/nitro-js-bridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/flyocloud/nitro-js-bridge/issues"
+  },
+  "homepage": "https://github.com/flyocloud/nitro-js-bridge#readme",
+  "keywords": [
+    "flyo",
+    "nitro",
+    "bridge",
+    "cms",
+    "integration"
   ]
 }
