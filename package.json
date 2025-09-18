@@ -17,7 +17,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest --run"
   },
   "devDependencies": {
     "@types/node": "^20.9.4",
