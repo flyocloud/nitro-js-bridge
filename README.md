@@ -3,8 +3,13 @@
 This is can be used in backend and frontend projects eitherway to make the bridge between Flyo Cloud and your application.
 
 ## Installation
+# Flyo Nitro Js Bridge
 
-```js
+This library provides a small bridge that lets a website integrate with Flyo's preview iframe. It works in both backend and frontend projects and also supports a CDN build for quick prototyping.
+
+## Installation
+
+```bash
 npm i @flyo/nitro-js-bridge
 ```
 
@@ -12,13 +17,13 @@ Discover on [npm.js.com/package/@flyo/nitro-js-bridge](https://www.npmjs.com/pac
 
 ### CDN
 
-For vanilla websites or quick prototyping, you can use the CDN:
+For vanilla websites or quick prototyping, you can use the CDN UMD build:
 
 ```html
-<script src="https://unpkg.com/@flyo/nitro-js-bridge@1/dist/index.js"></script>
+<script src="https://unpkg.com/@flyo/nitro-js-bridge@1/dist/nitro-js-bridge.umd.cjs"></script>
 ```
 
-This will make the functions available globally as `window.nitroJsBridge.open`, `window.nitroJsBridge.highlightAndClick`, etc.
+This will make the functions available globally as `window.nitroJsBridge.open`, `window.nitroJsBridge.highlightAndClick`, `window.nitroJsBridge.reload`, etc.
 
 ## Usage
 
@@ -26,7 +31,7 @@ This will make the functions available globally as `window.nitroJsBridge.open`, 
 
 The `open()` function allows you to trigger the editing interface for specific Flyo blocks when your website is embedded in Flyo's preview iframe.
 
-#### Basic Usage
+#### ESM (modern JS)
 
 ```js
 import { open } from '@flyo/nitro-js-bridge';
@@ -35,34 +40,22 @@ import { open } from '@flyo/nitro-js-bridge';
 open('your-block-uid-here');
 ```
 
-#### Implementation Examples
-
-##### Vanilla HTML/JavaScript (for PHP/static websites)
+#### Vanilla HTML/JavaScript (CDN)
 
 ```html
-<script src="https://unpkg.com/@flyo/nitro-js-bridge@1/dist/index.js"></script>
+<script src="https://unpkg.com/@flyo/nitro-js-bridge@1/dist/nitro-js-bridge.umd.cjs"></script>
 <button onclick="window.nitroJsBridge.open('block-123')">Edit Content</button>
-```
-
-##### JavaScript (ES Modules)
-
-```js
-import { open } from '@flyo/nitro-js-bridge';
-
-// Open a specific block for editing
-open('your-block-uid-here');
 ```
 
 ### Enhanced Editing Experience with Visual Feedback
 
-The `highlightAndClick()` function provides an enhanced editing experience by adding visual feedback when hovering over editable elements in Flyo's preview mode.
+The `highlightAndClick()` function adds visual hover/click feedback to editable elements in Flyo's preview mode.
 
-#### Basic Usage
+#### ESM
 
 ```js
 import { highlightAndClick } from '@flyo/nitro-js-bridge';
 
-// Set up enhanced editing with hover effects
 const element = document.querySelector('.editable-section');
 const cleanup = highlightAndClick('your-block-uid', element);
 
@@ -70,12 +63,10 @@ const cleanup = highlightAndClick('your-block-uid', element);
 // cleanup();
 ```
 
-#### Implementation Examples
-
-##### Vanilla HTML/JavaScript (for PHP/static websites)
+#### CDN
 
 ```html
-<script src="https://unpkg.com/@flyo/nitro-js-bridge@1/dist/index.js"></script>
+<script src="https://unpkg.com/@flyo/nitro-js-bridge@1/dist/nitro-js-bridge.umd.cjs"></script>
 <div class="content-block" data-flyo-uid="block-123">
   <h2>Editable Content</h2>
   <p>This content can be edited in Flyo.</p>
@@ -89,33 +80,47 @@ document.querySelectorAll('[data-flyo-uid]').forEach(element => {
 </script>
 ```
 
-##### JavaScript (ES Modules)
-
-```js
-import { highlightAndClick } from '@flyo/nitro-js-bridge';
-
-// Set up enhanced editing with hover effects
-const element = document.querySelector('.editable-section');
-const cleanup = highlightAndClick('your-block-uid', element);
-
-// Call cleanup when component unmounts (optional)
-// cleanup();
-```
-
 #### Visual Feedback
 
 When embedded in Flyo's preview iframe, `highlightAndClick()` provides:
-- **Hover Effect**: A dashed blue border appears when hovering over editable elements
-- **Cursor Change**: The cursor changes to a pointer to indicate clickability
-- **Smooth Transitions**: Smooth CSS transitions for better user experience
+- Hover effect (dashed blue border)
+- Cursor change to pointer
+- Smooth transitions for better UX
 
-The visual feedback only appears when the website is embedded in Flyo's preview iframe, ensuring it doesn't interfere with the normal user experience.
+The visual feedback only appears when the website is embedded in Flyo's preview iframe.
+
+### reload()
+
+The `reload()` helper registers a message listener that will reload the page when Flyo sends a `pageRefresh` message. This is useful to enable live preview reloads when embedded.
+
+#### ESM
+
+```js
+import { reload } from '@flyo/nitro-js-bridge';
+
+// Register the reload listener (only activates when embedded)
+reload();
+```
+
+#### CDN
+
+```html
+<script src="https://unpkg.com/@flyo/nitro-js-bridge@1/dist/nitro-js-bridge.umd.cjs"></script>
+<script>
+if (window.nitroJsBridge.reload) {
+  // Register the reload listener (only activates when embedded)
+  window.nitroJsBridge.reload();
+}
+</script>
+```
 
 ## Utility Functions
 
 ### isEmbedded()
 
 Check if your website is currently embedded in Flyo's preview iframe:
+
+#### ESM
 
 ```js
 import { isEmbedded } from '@flyo/nitro-js-bridge';
@@ -126,10 +131,10 @@ if (isEmbedded()) {
 }
 ```
 
-For vanilla JavaScript with CDN:
+#### CDN
 
 ```html
-<script src="https://unpkg.com/@flyo/nitro-js-bridge@1/dist/index.js"></script>
+<script src="https://unpkg.com/@flyo/nitro-js-bridge@1/dist/nitro-js-bridge.umd.cjs"></script>
 <script>
 if (window.nitroJsBridge.isEmbedded()) {
   console.log('Website is embedded in Flyo preview');
@@ -140,22 +145,19 @@ if (window.nitroJsBridge.isEmbedded()) {
 
 ## WYSIWYG Custom Render
 
-Since flyo uses ProseMirror/TipTap Json, we have built a custom renderer for you to use in your application in order to handle custom nodes and extend the default ones, for example image:
+Since Flyo uses ProseMirror/TipTap JSON, the `wysiwyg` helper renders that JSON to HTML and lets you override node renderers.
 
-An example usage for common scenarios:
+Example:
 
 ```js
 const html = wysiwyg(model.content.json, {
-  // image object with custom class
-  image: ({ attrs }) => `<img src="${attrs.src}" alt="${attrs.alt}" title="${attrs.title}" class="my-super-duper-responsive-class" />`,
-  // youtube video with custom width and height in order to make it responsive
+  image: ({ attrs }) => `<img src="${attrs.src}" alt="${attrs.alt}" title="${attrs.title}" class="responsive" />`,
   youtube: ({ attrs }) => `<iframe width="560" height="315" src="${attrs.src}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`,
-  // a custom flyo based node you like to style:
   accordion: ({ attrs }) => `<details><summary>${attrs.title}</summary>${attrs.text}</details>`,
-})
+});
 ```
 
-By default the most common nodes are handled, but you can override them by passing a function to with the correct node name. See the src/wysiwyg.js file for more details and which nodes are handled by default.
+By default the most common nodes are handled, but you can override them by passing a function with the node name. See `src/wysiwyg.ts` for details.
 
 # Development
 
