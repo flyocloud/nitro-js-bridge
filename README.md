@@ -156,3 +156,11 @@ const html = wysiwyg(model.content.json, {
 ```
 
 By default the most common nodes are handled, but you can override them by passing a function to with the correct node name. See the src/wysiwyg.js file for more details and which nodes are handled by default.
+
+# Development
+
+```bash
+yarn dev
+```
+
+Visit `http://localhost:5174/demo/index.html` to see the demo page.

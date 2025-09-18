@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nitro Demo Iframe</title>
+  <style>
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 20px; }
+    .block { padding: 18px; margin: 12px 0; background: #fff; border: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <h2>Embedded Preview</h2>
+
+  <div class="block" id="block-a">Block A — hover me and click the pencil</div>
+  <div class="block" id="block-b">Block B — hover me and click the pencil</div>
+  <div class="block" id="block-c">Block C — hover me and click the pencil</div>
+
+  <script type="module">
+    // Import the local module via vite dev server. Vite will resolve /src paths.
+    import { highlightAndClick } from '/src/index.ts';
+
+    // create a fake block UIDs for demo
+    const blocks = [
+      { id: 'block-a', uid: 'uid-a' },
+      { id: 'block-b', uid: 'uid-b' },
+      { id: 'block-c', uid: 'uid-c' }
+    ];
+
+    blocks.forEach(b => {
+      const el = document.getElementById(b.id);
+      if (!el) return;
+      // call highlightAndClick which will return a cleanup or open function
+      const cleanupOrOpen = highlightAndClick(b.uid, el);
+      // if not embedded, the function will be the open handler; otherwise cleanup function
+      // Add a data attribute for inspection
+      el.dataset.demo = typeof cleanupOrOpen === 'function' ? 'handler' : 'unknown';
+    });
+
+    // For demo: listen for click messages (open() posts messages to parent at flyo.cloud origin)
+    window.addEventListener('message', (ev) => {
+      // forward to parent so the outer page shows messages
+      parent.postMessage(ev.data, '*');
+    });
+  </script>
+</body>
+</html>
