@@ -1,11 +1,12 @@
-import isEmbedded from './utils';
+import { resolveWindow } from './utils';
 
 function open(blockUid: String) {
-    if (typeof window === "undefined") return;
-
-    const targetWindow = isEmbedded() ? window.parent : window;
+    var win = resolveWindow()
+    if (!win) {
+        return
+    }
    
-    targetWindow.postMessage({
+    win.postMessage({
         action: 'openEdit',
         data: JSON.parse(JSON.stringify({item:{uid: blockUid}}))
     }, 'https://flyo.cloud')

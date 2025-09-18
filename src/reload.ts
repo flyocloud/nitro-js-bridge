@@ -1,4 +1,4 @@
-import isEmbedded from './utils';
+import { isEmbedded } from './utils';
 
 function reload() {
     if (typeof window === "undefined") return;
