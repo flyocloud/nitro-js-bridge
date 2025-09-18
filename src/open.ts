@@ -1,7 +1,9 @@
+import isEmbedded from './utils';
+
 function open(blockUid: String) {
     if (typeof window === "undefined") return;
 
-    const targetWindow = window === window.top ? window : window.parent;
+    const targetWindow = isEmbedded() ? window.parent : window;
    
     targetWindow.postMessage({
         action: 'openEdit',
