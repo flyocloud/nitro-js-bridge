@@ -16,6 +16,21 @@
   <div class="block" id="block-b">Block B — hover me and click the pencil</div>
   <div class="block" id="block-c">Block C — hover me and click the pencil</div>
 
+  <h3>Tiny element example</h3>
+  <div class="block">
+    <div id="tiny-hr" class="flyo-preview-highlight" data-flyo-uid="fab4fbdf-b97b-4a88-a423-2712604bf71d">
+      <hr style="border:0;height:3px;background:#0b72ff;max-width:50px;margin:8px auto" />
+    </div>
+  </div>
+
+  <h3>Background image block (may clip overlay if positioned inside)</h3>
+  <div class="block" id="image-block" style="position:relative;height:160px;padding:0;overflow:hidden;">
+    <img src="https://via.placeholder.com/800x300.png?text=Background" alt="bg" style="width:100%;height:100%;object-fit:cover;display:block;" />
+    <div id="image-content" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;">
+      <strong>Image block — hover center area</strong>
+    </div>
+  </div>
+
   <script type="module">
     // Import the local module via vite dev server. Vite will resolve /src paths.
     import { highlightAndClick } from '/src/index.ts';
@@ -24,8 +39,54 @@
     const blocks = [
       { id: 'block-a', uid: 'uid-a' },
       { id: 'block-b', uid: 'uid-b' },
-      { id: 'block-c', uid: 'uid-c' }
+      { id: 'block-c', uid: 'uid-c' },
+      { id: 'tiny-hr', uid: 'uid-hr' },
+      { id: 'image-block', uid: 'uid-image' },
+      { id: 'image-content', uid: 'uid-image-content' }
     ];
+
+    // Extra test cases: transformed parent, overflow hidden, rotated, tiny pixels, scroll container
+    const extraHtml = `
+      <h3>Transformed / scaled parent</h3>
+      <div class="block" id="scaled-parent" style="transform:scale(0.9);transform-origin:0 0;">
+        <div id="scaled-child" style="padding:18px;background:#f9fafb">Scaled child — hover me</div>
+      </div>
+
+      <h3>Overflow hidden clipping</h3>
+      <div class="block" style="overflow:hidden;height:80px;position:relative;" id="clipped-parent">
+        <div id="clipped-child" style="position:absolute;left:70%;top:60%;width:200px;height:60px;background:#eee">Clipped child (partially outside)</div>
+      </div>
+
+      <h3>Rotated element</h3>
+      <div class="block">
+        <div id="rotated" style="display:inline-block;transform:rotate(-8deg);padding:6px;background:#fff">Rotated element</div>
+      </div>
+
+      <h3>Very tiny pixels</h3>
+      <div class="block">
+        <div id="tiny-px" style="width:2px;height:2px;background:#0b72ff;margin:12px auto"></div>
+      </div>
+
+      <h3>Scroll container</h3>
+      <div class="block" style="height:120px;overflow:auto;padding:0">
+        <div style="height:300px;padding:18px">
+          <div id="scroll-target" style="margin-top:220px;background:#fff;padding:12px">Scroll down to reveal target</div>
+        </div>
+      </div>
+    `;
+
+    const container = document.createElement('div');
+    container.innerHTML = extraHtml;
+    document.body.appendChild(container);
+
+    // Add the new test elements to the blocks list so the highlight is attached
+    [
+      { id: 'scaled-child', uid: 'uid-scaled' },
+      { id: 'clipped-child', uid: 'uid-clipped' },
+      { id: 'rotated', uid: 'uid-rotated' },
+      { id: 'tiny-px', uid: 'uid-tiny-px' },
+      { id: 'scroll-target', uid: 'uid-scroll' }
+    ].forEach(b => blocks.push(b));
 
     blocks.forEach(b => {
       const el = document.getElementById(b.id);
