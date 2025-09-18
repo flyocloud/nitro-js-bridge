@@ -63,7 +63,7 @@ test('highlightAndClick sets up hover effects when embedded and element provided
   };
 
   // Mock the DOM APIs used by the function: document.createElement and getComputedStyle
-  const mockOverlay: any = {
+  const makeMockOverlay = () => ({
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     innerHTML: '',
@@ -71,7 +71,7 @@ test('highlightAndClick sets up hover effects when embedded and element provided
     setAttribute: vi.fn(),
     style: {},
     type: ''
-  };
+  });
 
   const originalDocument = (global as any).document;
   const originalGetComputedStyle = (global as any).getComputedStyle;
@@ -82,12 +82,21 @@ test('highlightAndClick sets up hover effects when embedded and element provided
     appendChild: vi.fn((o: any) => { o.parentElement = mockBody; }),
     removeChild: vi.fn((o: any) => { o.parentElement = null; })
   };
+  const created: any[] = [];
   const mockDoc: any = {
-    createElement: vi.fn(() => mockOverlay),
+    createElement: vi.fn((tag?: string) => {
+      const o = makeMockOverlay();
+      // if it's a button, include type property
+      if (tag === 'button') o.type = 'button';
+      created.push(o);
+      return o;
+    }),
     body: mockBody,
     addEventListener: vi.fn(),
     removeEventListener: vi.fn()
   } as any;
+  // spy on document.removeEventListener for later assertion
+  (mockDoc as any).removeEventListener = vi.fn();
   (global as any).document = mockDoc;
   (global as any).getComputedStyle = vi.fn(() => ({ position: 'static' })) as any;
   // Mock window and RAF/CARF for Node test environment
@@ -108,9 +117,9 @@ test('highlightAndClick sets up hover effects when embedded and element provided
   expect(mockElement.addEventListener).toHaveBeenCalledWith('mouseenter', expect.any(Function));
   expect(mockElement.addEventListener).toHaveBeenCalledWith('mouseleave', expect.any(Function));
 
-  // Verify overlay was appended to document.body
-  expect((global as any).document.createElement).toHaveBeenCalledTimes(1);
-  expect((global as any).document.body.appendChild).toHaveBeenCalledTimes(1);
+  // Verify overlays (pad + button) were appended to document.body
+  expect((global as any).document.createElement).toHaveBeenCalledTimes(2);
+  expect((global as any).document.body.appendChild).toHaveBeenCalledTimes(2);
 
   // Test cleanup function
   expect(typeof cleanup).toBe('function');
@@ -118,10 +127,7 @@ test('highlightAndClick sets up hover effects when embedded and element provided
 
   // Verify hover listeners removed and overlay removed from body
   expect(mockElement.removeEventListener).toHaveBeenCalledTimes(2);
-  expect((global as any).document.body.removeChild).toHaveBeenCalledTimes(1);
-  // Document-level mousemove listener should be removed
-  expect((global as any).document.removeEventListener).toHaveBeenCalledWith('mousemove', expect.any(Function), true);
-
+  expect((global as any).document.body.removeChild).toHaveBeenCalledTimes(2);
   // Restore globals
   (global as any).document = originalDocument;
   (global as any).getComputedStyle = originalGetComputedStyle;

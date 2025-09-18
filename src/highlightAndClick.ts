@@ -1,268 +1,229 @@
 import { isEmbedded } from './utils';
 import open from './open';
 
-// Minimal, easy-to-reason highlightAndClick. Shows a small edit button in the
-// top-left on hover and adds a subtle host stroke. Keeps state minimal and
-// avoids trying to mirror computed styles exactly.
-function highlightAndClick(blockUid: string, element?: HTMLElement) {
+/**
+ * Hover-only ghost edit button with "hover pad":
+ * - Visible only while hovering host, the button, or an invisible pad around the host.
+ * - Pad enlarges the effective hover area so tiny elements are easy to target.
+ * - Slight delay before hiding to allow moving from host → button.
+ * - Button anchors to host's top-left (outside-above for tiny hosts if possible).
+ * - Repositions on scroll/resize and host resize while visible.
+ * - No mutations to host styles.
+ */
+function highlightAndClick(blockUid: string, hostElement?: HTMLElement) {
   const openHandler = () => open(blockUid);
-  if (!isEmbedded() || !element) return openHandler;
-  const target = element as HTMLElement;
-  const originalCursor = target.style.cursor || '';
-  const originalBoxShadow = target.style.boxShadow || '';
-  const originalBorderRadius = target.style.borderRadius || '';
+  if (!isEmbedded() || !hostElement) {
+    return openHandler;
+  }
 
-  // Create overlay as a fixed element in the document body so it can't be
-  // clipped by overflow or transformed parents.
-  const overlay = document.createElement('button');
-  overlay.type = 'button';
-  overlay.setAttribute('aria-label', 'Edit block');
-  overlay.style.position = 'fixed';
-  overlay.style.top = '0px';
-  overlay.style.left = '0px';
-  // Make overlay a more prominent floating action button (FAB)
-  //—bigger, circular, and with stronger contrast and shadow so it remains
-  // visible even without host border highlighting.
-  overlay.style.width = '48px';
-  overlay.style.height = '48px';
-  overlay.style.padding = '6px';
-  overlay.style.border = 'none';
-  overlay.style.background = '#ffd466';
-  overlay.style.display = 'flex';
-  overlay.style.alignItems = 'center';
-  overlay.style.justifyContent = 'center';
-  overlay.style.cursor = 'pointer';
-  overlay.style.zIndex = '9999';
-  overlay.style.opacity = '0';
-  overlay.style.transition = 'opacity 120ms ease, transform 120ms ease';
-  overlay.style.transform = 'translateY(-6px)';
-  overlay.style.borderRadius = '999px';
-  // Add a thin white border/halo so the FAB remains visible on dark
-  // and similarly colored surfaces. Use an outer glow via box-shadow to
-  // avoid affecting layout.
-  overlay.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18), 0 3px 8px rgba(0,0,0,0.10), 0 0 0 3px rgba(255,255,255,0.9)';
+  const host: HTMLElement = hostElement;
 
-  overlay.innerHTML =
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-  '<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#111"/>' +
-  '<path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#111"/>' +
+  // --- Create ghost button
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.setAttribute('aria-label', 'Edit block');
+  btn.style.position = 'fixed';
+  btn.style.top = '0px';
+  btn.style.left = '0px';
+  btn.style.zIndex = '9999';
+  btn.style.width = '44px';
+  btn.style.height = '44px';
+  btn.style.display = 'none'; // hidden until hover
+  btn.style.alignItems = 'center';
+  btn.style.justifyContent = 'center';
+  btn.style.border = '0px solid #000';     // solid black border (no shadow)
+  btn.style.borderRadius = '9999px';
+  btn.style.boxSizing = 'border-box';
+  btn.style.cursor = 'pointer';
+  btn.style.background = '#FFD466';
+  btn.innerHTML =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+      '<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#111"/>' +
+      '<path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#111"/>' +
     '</svg>';
 
-  overlay.addEventListener('click', openHandler);
-  document.body.appendChild(overlay);
+  // --- Transparent hover pad to enlarge hitbox around tiny hosts
+  const pad = document.createElement('div');
+  pad.style.position = 'fixed';
+  pad.style.top = '0px';
+  pad.style.left = '0px';
+  pad.style.zIndex = '9998';           // just under the button
+  pad.style.display = 'none';          // shown only while hovering
+  pad.style.pointerEvents = 'auto';    // must receive hover/clicks
+  pad.style.background = 'transparent';
+  pad.style.border = 'none';
+  // (No outline; stays invisible)
 
-  // Track hover state for element and overlay so the overlay stays visible
-  // when hovering either.
-  let isOverElement = false;
-  let isOverOverlay = false;
+  btn.addEventListener('click', openHandler);
+  document.body.appendChild(pad);
+  document.body.appendChild(btn);
 
-  // Throttle repositioning with RAF
-  let rafId = 0;
-  const schedulePosition = () => {
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(() => {
-      rafId = 0;
-      positionOverlay();
-    });
-  };
+  // --- Layout constants
+  const SIZE = 44;     // button size
+  const INSET = 6;     // offset inside host (for larger hosts)
+  const GAP = 6;       // gap when placed outside the host
+  const MARGIN = 6;    // viewport margin
+  const PAD = 10;      // how much to expand the hover pad around the host (px on each side)
+  const HIDE_DELAY = 180; // ms hide delay so you can move to the button
 
-  const OVERLAY_SIZE = 48;
-  const PROXIMITY = 18; // px tolerance to show overlay for tiny elements
+  const vw = () => window.innerWidth || document.documentElement.clientWidth;
+  const vh = () => window.innerHeight || document.documentElement.clientHeight;
 
-  function isRectVisible(rect: DOMRect) {
-    const vw = window.innerWidth || document.documentElement.clientWidth;
-    const vh = window.innerHeight || document.documentElement.clientHeight;
-    return !(rect.bottom < 0 || rect.right < 0 || rect.top > vh || rect.left > vw || (rect.width === 0 && rect.height === 0));
-  }
+  const isRectVisible = (r: DOMRect) =>
+    !(r.bottom < 0 || r.right < 0 || r.top > vh() || r.left > vw() || (r.width === 0 && r.height === 0));
 
-  function positionOverlay() {
-    try {
-      const rect = target.getBoundingClientRect();
-      if (!isRectVisible(rect)) {
-        // place offscreen but keep in DOM
-        overlay.style.display = 'none';
-        return;
-      }
-  overlay.style.display = 'flex';
-      // Align to the element's top-left in viewport coordinates. If the
-      // element is very small, prefer placing the overlay slightly offset
-      // so it's easier to hit and doesn't overlap the element content.
-      let left = Math.round(rect.left);
-      let top = Math.round(rect.top);
-      const elW = Math.round(rect.width);
-      const elH = Math.round(rect.height);
-      // If element is tiny, offset overlay above the element when possible
-      if (elW < OVERLAY_SIZE || elH < OVERLAY_SIZE) {
-        // position so overlay's bottom-left aligns with element's top-left
-        left = Math.round(rect.left);
-        top = Math.round(rect.top) - OVERLAY_SIZE - 8;
-      }
-      // Clamp to viewport so overlay doesn't go offscreen
-      const vw = window.innerWidth || document.documentElement.clientWidth;
-      const vh = window.innerHeight || document.documentElement.clientHeight;
-      left = Math.max(6, Math.min(left, vw - OVERLAY_SIZE - 6));
-      top = Math.max(6, Math.min(top, vh - OVERLAY_SIZE - 6));
-  overlay.style.left = `${left}px`;
-  overlay.style.top = `${top}px`;
-      // Mirror border radius and other subtle visuals from the element
-      const elStyle = getComputedStyle(target);
-      overlay.style.borderTopLeftRadius = elStyle.borderTopLeftRadius || '6px';
-    } catch (e) {
-      // If element isn't available anymore, leave it hidden — cleanup will
-      // remove the overlay when mutation observer notices removal.
-      overlay.style.display = 'none';
+  const fitsViewport = (x: number, y: number) =>
+    x >= MARGIN && y >= MARGIN && x + SIZE <= vw() - MARGIN && y + SIZE <= vh() - MARGIN;
+
+  const clamp = (x: number, y: number) => ({
+    x: Math.max(MARGIN, Math.min(x, vw() - SIZE - MARGIN)),
+    y: Math.max(MARGIN, Math.min(y, vh() - SIZE - MARGIN)),
+  });
+
+  function position(): void {
+    const rect = host.getBoundingClientRect();
+    const tiny = rect.width < SIZE || rect.height < SIZE;
+
+    // Button position: prefer outside-above for tiny targets, else inside top-left
+    const candX = Math.round(rect.left);
+    const candY = Math.round(rect.top) - SIZE - GAP;
+    const altX  = Math.round(rect.left) + INSET;
+    const altY  = Math.round(rect.top) + INSET;
+
+    let x: number;
+    let y: number;
+    if (tiny && fitsViewport(candX, candY)) {
+      x = candX; y = candY;
+    } else if (fitsViewport(altX, altY)) {
+      x = altX; y = altY;
+    } else if (fitsViewport(candX, candY)) {
+      x = candX; y = candY;
+    } else {
+      const a = clamp(candX, candY);
+      const b = clamp(altX, altY);
+      const dA = Math.abs(a.x - rect.left) + Math.abs(a.y - rect.top);
+      const dB = Math.abs(b.x - rect.left) + Math.abs(b.y - rect.top);
+      ({ x, y } = dA <= dB ? a : b);
     }
+
+    btn.style.left = `${x}px`;
+    btn.style.top = `${y}px`;
+
+    // Pad position: expand the host rect to create an easy hover bridge to the button
+    const padLeft   = Math.max(MARGIN, Math.round(rect.left) - PAD);
+    const padTop    = Math.max(MARGIN, Math.round(rect.top) - PAD);
+    const padRight  = Math.min(vw() - MARGIN, Math.round(rect.right) + PAD);
+    const padBottom = Math.min(vh() - MARGIN, Math.round(rect.bottom) + PAD);
+    pad.style.left   = `${padLeft}px`;
+    pad.style.top    = `${padTop}px`;
+    pad.style.width  = `${Math.max(0, padRight - padLeft)}px`;
+    pad.style.height = `${Math.max(0, padBottom - padTop)}px`;
   }
 
+  // --- Hover state + delayed hide
+  let overHost = false;
+  let overBtn = false;
+  let overPad = false;
+  let watching = false;
+  let hideTimer: number | null = null;
 
-  const show = () => {
-    positionOverlay();
-  overlay.style.opacity = '1';
-  overlay.style.transform = 'translateY(0)';
-    // Intentionally do not modify the element's boxShadow — the edit
-    // overlay is sufficiently visible on its own. Keep borderRadius
-    // modifications minimal and only restore later if needed.
-    // target.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.08)';
-    target.style.borderRadius = '6px';
-  };
-  const hide = () => {
-  overlay.style.opacity = '0';
-  overlay.style.transform = 'translateY(-8px)';
-    target.style.boxShadow = originalBoxShadow;
-    target.style.borderRadius = originalBorderRadius;
-  };
-
-  const onElementEnter = () => {
-    isOverElement = true;
-    show();
-  };
-  const onElementLeave = () => {
-    // If moving into overlay, don't hide
-    isOverElement = false;
-    requestAnimationFrame(() => {
-      if (!isOverOverlay && !isOverElement) hide();
-    });
-  };
-  const onOverlayEnter = () => {
-    isOverOverlay = true;
-    show();
-  };
-  const onOverlayLeave = () => {
-    isOverOverlay = false;
-    requestAnimationFrame(() => {
-      if (!isOverOverlay && !isOverElement) hide();
-    });
-  };
-
-  target.addEventListener('mouseenter', onElementEnter);
-  target.addEventListener('mouseleave', onElementLeave);
-  overlay.addEventListener('mouseenter', onOverlayEnter);
-  overlay.addEventListener('mouseleave', onOverlayLeave);
-
-  // Show overlay when the pointer is near the element (helps with tiny elements)
-  let pointerRaf = 0;
-  const onPointerMove = (ev: MouseEvent) => {
-    if (pointerRaf) return;
-    pointerRaf = requestAnimationFrame(() => {
-      pointerRaf = 0;
-      try {
-        const rect = target.getBoundingClientRect();
-        const x = ev.clientX;
-        const y = ev.clientY;
-        const expanded = {
-          left: rect.left - PROXIMITY,
-          top: rect.top - PROXIMITY,
-          right: rect.right + PROXIMITY,
-          bottom: rect.bottom + PROXIMITY,
-        };
-        const isNear = x >= expanded.left && x <= expanded.right && y >= expanded.top && y <= expanded.bottom;
-        if (isNear) {
-          show();
-          schedulePosition();
-        } else {
-          // hide only if not over element/overlay
-          if (!isOverElement && !isOverOverlay) hide();
-        }
-      } catch (e) {}
-    });
-  };
-  document.addEventListener('mousemove', onPointerMove, true);
-
-  // Keep overlay positioned during scroll/resize and element resize
-  const onScroll = schedulePosition;
-  const onResize = schedulePosition;
-  window.addEventListener('scroll', onScroll, true);
-  window.addEventListener('resize', onResize);
-
-  // ResizeObserver to reposition when element size changes (guarded)
-  let resizeObserver: ResizeObserver | null = null;
-  const ResizeObserverCtor = (window as any).ResizeObserver;
-  if (typeof ResizeObserverCtor === 'function') {
-    try {
-      resizeObserver = new ResizeObserverCtor(() => schedulePosition());
-      if (resizeObserver) {
-        try {
-          resizeObserver.observe(target);
-        } catch (e) {
-          // ignore
-        }
-      }
-    } catch (e) {
-      // ignore if ResizeObserver can't observe
-      resizeObserver = null;
+  const clearHideTimer = () => {
+    if (hideTimer !== null) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
     }
-  }
+  };
 
-  // MutationObserver to detect element removal from DOM (guarded)
-  let mutationObserver: MutationObserver | null = null;
-  const MutationObserverCtor = (window as any).MutationObserver;
-  if (typeof MutationObserverCtor === 'function') {
+  const show = (): void => {
+    clearHideTimer();
     try {
-      mutationObserver = new MutationObserverCtor((mutations: MutationRecord[]) => {
-        for (const m of mutations) {
-          for (const node of Array.from(m.removedNodes || [])) {
-            if (node === target || (node instanceof HTMLElement && node.contains(target))) {
-              // element removed — cleanup
-              cleanup();
-              return;
-            }
-          }
-        }
+      const rect = host.getBoundingClientRect();
+      if (!isRectVisible(rect)) { hide(true); return; }
+      position();
+      btn.style.display = 'flex';
+      pad.style.display = 'block';
+      startWatch();
+    } catch {
+      hide(true);
+    }
+  };
+
+  const hide = (immediate = false): void => {
+    if (immediate) {
+      clearHideTimer();
+      btn.style.display = 'none';
+      pad.style.display = 'none';
+      stopWatch();
+      return;
+    }
+    clearHideTimer();
+    hideTimer = window.setTimeout(() => {
+      if (!overHost && !overBtn && !overPad) {
+        btn.style.display = 'none';
+        pad.style.display = 'none';
+        stopWatch();
+      }
+      hideTimer = null;
+    }, HIDE_DELAY);
+  };
+
+  // Keep aligned while visible
+  const onScroll = (): void => { if (btn.style.display !== 'none') position(); };
+  const onResize = onScroll;
+
+  let ro: ResizeObserver | null = null;
+  const ROCtor: typeof ResizeObserver | undefined = (window as any).ResizeObserver;
+
+  const startWatch = (): void => {
+    if (watching) return;
+    watching = true;
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
+    if (typeof ROCtor === 'function') {
+      ro = new ROCtor(() => {
+        if (btn.style.display !== 'none') position();
       });
-      if (mutationObserver) {
-        try {
-          mutationObserver.observe(document.body, { childList: true, subtree: true });
-        } catch (e) {}
-      }
-    } catch (e) {
-      mutationObserver = null;
+      ro?.observe(host);
     }
-  }
+  };
 
-  // Initial placement
-  schedulePosition();
-
-  function cleanup() {
-    target.removeEventListener('mouseenter', onElementEnter);
-    target.removeEventListener('mouseleave', onElementLeave);
-    overlay.removeEventListener('mouseenter', onOverlayEnter);
-    overlay.removeEventListener('mouseleave', onOverlayLeave);
-    overlay.removeEventListener('click', openHandler);
+  const stopWatch = (): void => {
+    if (!watching) return;
+    watching = false;
     window.removeEventListener('scroll', onScroll, true);
     window.removeEventListener('resize', onResize);
-    try {
-      resizeObserver?.disconnect();
-    } catch (e) {}
-    try {
-      if (mutationObserver) mutationObserver.disconnect();
-    } catch (e) {}
-    try {
-      document.removeEventListener('mousemove', onPointerMove, true);
-    } catch (e) {}
-    if (overlay.parentElement === document.body) document.body.removeChild(overlay);
-    target.style.cursor = originalCursor;
-    target.style.boxShadow = originalBoxShadow;
-    target.style.borderRadius = originalBorderRadius;
+    try { ro?.disconnect(); } catch {}
+    ro = null;
+  };
+
+  // --- Hover wiring
+  const onHostEnter = (): void => { overHost = true; show(); };
+  const onHostLeave = (): void => { overHost = false; if (!overBtn && !overPad) hide(); };
+  const onBtnEnter  = (): void => { overBtn = true; show(); };
+  const onBtnLeave  = (): void => { overBtn = false; if (!overHost && !overPad) hide(); };
+  const onPadEnter  = (): void => { overPad = true; show(); };
+  const onPadLeave  = (): void => { overPad = false; if (!overHost && !overBtn) hide(); };
+
+  host.addEventListener('mouseenter', onHostEnter);
+  host.addEventListener('mouseleave', onHostLeave);
+  btn.addEventListener('mouseenter', onBtnEnter);
+  btn.addEventListener('mouseleave', onBtnLeave);
+  pad.addEventListener('mouseenter', onPadEnter);
+  pad.addEventListener('mouseleave', onPadLeave);
+  btn.addEventListener('click', openHandler);
+
+  function cleanup(): void {
+    clearHideTimer();
+    stopWatch();
+    btn.removeEventListener('click', openHandler);
+    host.removeEventListener('mouseenter', onHostEnter);
+    host.removeEventListener('mouseleave', onHostLeave);
+    btn.removeEventListener('mouseenter', onBtnEnter);
+    btn.removeEventListener('mouseleave', onBtnLeave);
+    pad.removeEventListener('mouseenter', onPadEnter);
+    pad.removeEventListener('mouseleave', onPadLeave);
+    if (btn.parentElement === document.body) document.body.removeChild(btn);
+    if (pad.parentElement === document.body) document.body.removeChild(pad);
   }
 
   return cleanup;
