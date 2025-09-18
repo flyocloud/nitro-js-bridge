@@ -20,11 +20,14 @@ function highlightAndClick(blockUid: string, element?: HTMLElement) {
   overlay.style.position = 'fixed';
   overlay.style.top = '0px';
   overlay.style.left = '0px';
-  overlay.style.width = '34px';
-  overlay.style.height = '34px';
-  overlay.style.padding = '0';
+  // Make overlay a more prominent floating action button (FAB)
+  //—bigger, circular, and with stronger contrast and shadow so it remains
+  // visible even without host border highlighting.
+  overlay.style.width = '48px';
+  overlay.style.height = '48px';
+  overlay.style.padding = '6px';
   overlay.style.border = 'none';
-  overlay.style.background = 'rgba(255,255,255,0.9)';
+  overlay.style.background = '#ffd466';
   overlay.style.display = 'flex';
   overlay.style.alignItems = 'center';
   overlay.style.justifyContent = 'center';
@@ -32,13 +35,17 @@ function highlightAndClick(blockUid: string, element?: HTMLElement) {
   overlay.style.zIndex = '9999';
   overlay.style.opacity = '0';
   overlay.style.transition = 'opacity 120ms ease, transform 120ms ease';
-  overlay.style.transform = 'translateY(-4px)';
-  overlay.style.borderTopLeftRadius = '6px';
+  overlay.style.transform = 'translateY(-6px)';
+  overlay.style.borderRadius = '999px';
+  // Add a thin white border/halo so the FAB remains visible on dark
+  // and similarly colored surfaces. Use an outer glow via box-shadow to
+  // avoid affecting layout.
+  overlay.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18), 0 3px 8px rgba(0,0,0,0.10), 0 0 0 3px rgba(255,255,255,0.9)';
 
   overlay.innerHTML =
-    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-    '<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#333"/>' +
-    '<path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#333"/>' +
+  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+  '<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#111"/>' +
+  '<path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#111"/>' +
     '</svg>';
 
   overlay.addEventListener('click', openHandler);
@@ -59,8 +66,8 @@ function highlightAndClick(blockUid: string, element?: HTMLElement) {
     });
   };
 
-  const OVERLAY_SIZE = 34;
-  const PROXIMITY = 12; // px tolerance to show overlay for tiny elements
+  const OVERLAY_SIZE = 48;
+  const PROXIMITY = 18; // px tolerance to show overlay for tiny elements
 
   function isRectVisible(rect: DOMRect) {
     const vw = window.innerWidth || document.documentElement.clientWidth;
@@ -76,7 +83,7 @@ function highlightAndClick(blockUid: string, element?: HTMLElement) {
         overlay.style.display = 'none';
         return;
       }
-      overlay.style.display = 'flex';
+  overlay.style.display = 'flex';
       // Align to the element's top-left in viewport coordinates. If the
       // element is very small, prefer placing the overlay slightly offset
       // so it's easier to hit and doesn't overlap the element content.
@@ -88,15 +95,15 @@ function highlightAndClick(blockUid: string, element?: HTMLElement) {
       if (elW < OVERLAY_SIZE || elH < OVERLAY_SIZE) {
         // position so overlay's bottom-left aligns with element's top-left
         left = Math.round(rect.left);
-        top = Math.round(rect.top) - OVERLAY_SIZE - 6;
+        top = Math.round(rect.top) - OVERLAY_SIZE - 8;
       }
       // Clamp to viewport so overlay doesn't go offscreen
       const vw = window.innerWidth || document.documentElement.clientWidth;
       const vh = window.innerHeight || document.documentElement.clientHeight;
       left = Math.max(6, Math.min(left, vw - OVERLAY_SIZE - 6));
       top = Math.max(6, Math.min(top, vh - OVERLAY_SIZE - 6));
-      overlay.style.left = `${left}px`;
-      overlay.style.top = `${top}px`;
+  overlay.style.left = `${left}px`;
+  overlay.style.top = `${top}px`;
       // Mirror border radius and other subtle visuals from the element
       const elStyle = getComputedStyle(target);
       overlay.style.borderTopLeftRadius = elStyle.borderTopLeftRadius || '6px';
@@ -110,14 +117,17 @@ function highlightAndClick(blockUid: string, element?: HTMLElement) {
 
   const show = () => {
     positionOverlay();
-    overlay.style.opacity = '1';
-    overlay.style.transform = 'translateY(0)';
-    target.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.08)';
+  overlay.style.opacity = '1';
+  overlay.style.transform = 'translateY(0)';
+    // Intentionally do not modify the element's boxShadow — the edit
+    // overlay is sufficiently visible on its own. Keep borderRadius
+    // modifications minimal and only restore later if needed.
+    // target.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.08)';
     target.style.borderRadius = '6px';
   };
   const hide = () => {
-    overlay.style.opacity = '0';
-    overlay.style.transform = 'translateY(-4px)';
+  overlay.style.opacity = '0';
+  overlay.style.transform = 'translateY(-8px)';
     target.style.boxShadow = originalBoxShadow;
     target.style.borderRadius = originalBorderRadius;
   };
