@@ -7,7 +7,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      name: 'nitro-js-bridge',
+      name: 'nitroJsBridge',
       fileName: 'nitro-js-bridge',
     },
   },
