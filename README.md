@@ -155,6 +155,8 @@ The function accepts three arguments:
 Example:
 
 ```js
+import { wysiwyg } from '@flyo/nitro-js-bridge';
+
 const html = wysiwyg(model.content.json, {
   image: ({ attrs }) => `<img src="${attrs.src}" alt="${attrs.alt}" title="${attrs.title}" class="responsive" />`,
   youtube: ({ attrs }) => `<iframe width="560" height="315" src="${attrs.src}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`,
@@ -172,6 +174,8 @@ By default the most common nodes and marks are handled, but you can override the
 If you are iterating over the JSON nodes yourself (e.g. using another library), you can use `wysiwyg` to render individual nodes:
 
 ```js
+import { wysiwyg } from '@flyo/nitro-js-bridge';
+
 const nodes = model.content.json.content;
 nodes.forEach(node => {
   const html = wysiwyg(node);
