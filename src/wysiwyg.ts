@@ -1,7 +1,27 @@
 
-// Rendering logic for the updated ProseMirror JSON
+/**
+ * Renders a ProseMirror/TipTap JSON object into HTML.
+ * 
+ * This function traverses the JSON tree and converts each node into its corresponding HTML representation.
+ * It supports custom renderers for both nodes (like paragraphs, headings) and marks (like bold, italic).
+ * 
+ * @param {any} json - The ProseMirror/TipTap JSON object to render.
+ * @param {Object} [nodeRenderers] - Optional custom renderers for nodes. Keys are node types (e.g., 'paragraph', 'image'), and values are functions that return HTML strings.
+ * @param {Object} [markRenderers] - Optional custom renderers for marks. Keys are mark types (e.g., 'bold', 'link'), and values are functions that take the text and mark object, returning an HTML string.
+ * 
+ * @returns {string} The rendered HTML string.
+ * 
+ * @example
+ * const json = { type: 'doc', content: [...] };
+ * const html = wysiwyg(json, {
+ *   image: ({ attrs }) => `<img src="${attrs.src}" class="custom-image" />`
+ * }, {
+ *   bold: (text) => `<span class="bold">${text}</span>`
+ * });
+ */
 function wysiwyg(json: any, nodeRenderers?: any, markRenderers?: any) {
 
+  // Default renderers for marks (inline styles like bold, italic, links)
   const defaultMarkRenderers: { [key: string]: (text: string, mark: any) => string } = {
     bold: (text) => `<strong>${text}</strong>`,
     italic: (text) => `<em>${text}</em>`,
@@ -10,8 +30,10 @@ function wysiwyg(json: any, nodeRenderers?: any, markRenderers?: any) {
     link: (text, mark) => `<a href="${mark.attrs.href}" target="${mark.attrs.target}">${text}</a>`,
   };
 
+  // Merge default mark renderers with any custom ones provided
   const combinedMarkRenderers = { ...defaultMarkRenderers, ...markRenderers };
 
+  // Default renderers for nodes (block elements like paragraphs, headings, lists)
   const defaultNodeRenderers = {
     default: ({ type }: { type: any[] }) => `<div style="border:1px solid red">Node "${type}" is not defined.</div>`,
     doc: ({ content }: { content: any[] }, renderNode: any) => `${content.map(renderNode).join('')}`,
@@ -43,17 +65,25 @@ function wysiwyg(json: any, nodeRenderers?: any, markRenderers?: any) {
     },
   };
 
+  // Merge default node renderers with any custom ones provided
   const combinedNodeRenderers = { ...defaultNodeRenderers, ...nodeRenderers };
 
+  /**
+   * Recursively renders a node and its children.
+   * 
+   * @param {any} node - The node to render.
+   * @returns {string} The rendered HTML for the node.
+   */
   function renderNode(node: any) {
     const renderer = combinedNodeRenderers[node.type] || combinedNodeRenderers.default;
     if (renderer) {
       if (!node.hasOwnProperty('content')) {
-        // this ensures that the content property is always an array which can be a problem with empty paragraphs
+        // Ensure content property is always an array to prevent errors with empty nodes
         node.content = []
       }
 
       if (node.text && node.text.length > 0) {
+        // Sanitize text content to prevent XSS attacks
         node.sanitizedText = escapeHtml(node.text)
       }
 
@@ -62,6 +92,12 @@ function wysiwyg(json: any, nodeRenderers?: any, markRenderers?: any) {
     return ''; // Return an empty string if no renderer is found for the node type
   }
 
+  /**
+   * Escapes HTML special characters to prevent XSS.
+   * 
+   * @param {string} text - The text to escape.
+   * @returns {string} The escaped text.
+   */
   function escapeHtml(text: string) {
     var map: { [key: string]: string } = {
       '&': '&amp;',
@@ -76,30 +112,5 @@ function wysiwyg(json: any, nodeRenderers?: any, markRenderers?: any) {
 
   return renderNode(json);
 }
-
-// Define rendering callbacks for each node type
-/*
-const nodeRenderers = {
-  default: ({ content }) => `<div style="border:1px solid red">${content.map(renderNode).join('')}</div>`,
-  doc: ({ content }) => `<div>${content.map(renderNode).join('')}</div>`,
-  heading: ({ content, attrs }) => `<h${attrs.level}>${content.map(renderNode).join('')}</h${attrs.level}>`,
-  paragraph: ({ content }) => `<p>${content.map(renderNode).join('')}</p>`,
-  text: ({ text, marks }) => {
-    let renderedText = text;
-    if (marks) {
-      marks.forEach(mark => {
-        if (mark.type === "bold") {
-          renderedText = `<strong>${renderedText}</strong>`;
-        } else if (mark.type === "italic") {
-          renderedText = `<em>${renderedText}</em>`;
-        }
-        // Add more conditions for other mark types (underline, strikethrough, etc.) if needed
-      });
-    }
-    return renderedText;
-  }
-  // Add more node types and their rendering callbacks as needed
-};
-*/
 
 export default wysiwyg;
