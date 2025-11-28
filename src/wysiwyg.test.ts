@@ -118,3 +118,213 @@ test('customElements', () => {
 
   expect(html).toBe('<h1>ProseMirror JSON Render Example</h1><p>This is a paragraph with a line break:<div style="border:1px solid red">Node "hard_break" is not defined.</div>After the line break.</p><img src="image.jpg" alt="Image" title="Image" class="my-super-duper-responsive-class" /><iframe width="560" height="315" src="youtube.com" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe><details><summary>Accordion Title</summary>Accordion Text</details>');
 });
+
+test('lists', () => {
+  const sampleJSON = {
+    type: 'doc',
+    content: [
+      {
+        type: 'bulletList',
+        content: [
+          {
+            type: 'listItem',
+            content: [
+              {
+                type: 'paragraph',
+                content: [
+                  {
+                    type: 'text',
+                    text: 'Bullet Item 1'
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            type: 'listItem',
+            content: [
+              {
+                type: 'paragraph',
+                content: [
+                  {
+                    type: 'text',
+                    text: 'Bullet Item 2'
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        type: 'orderedList',
+        content: [
+          {
+            type: 'listItem',
+            content: [
+              {
+                type: 'paragraph',
+                content: [
+                  {
+                    type: 'text',
+                    text: 'Ordered Item 1'
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            type: 'listItem',
+            content: [
+              {
+                type: 'paragraph',
+                content: [
+                  {
+                    type: 'text',
+                    text: 'Ordered Item 2'
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+
+  const html = wysiwyg(sampleJSON);
+  
+  expect(html).toBe('<ul><li>Bullet Item 1</li><li>Bullet Item 2</li></ul><ol><li>Ordered Item 1</li><li>Ordered Item 2</li></ol>');
+});
+
+
+test('default mark rendering', () => {
+  const sampleJSON = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          {
+            type: "text",
+            text: "Bold text",
+            marks: [{ type: "bold" }]
+          }
+        ]
+      }
+    ]
+  };
+
+  const html = wysiwyg(sampleJSON);
+  expect(html).toBe('<p><strong>Bold text</strong></p>');
+});
+
+test('override bold mark', () => {
+  const sampleJSON = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          {
+            type: "text",
+            text: "Bold text",
+            marks: [{ type: "bold" }]
+          }
+        ]
+      }
+    ]
+  };
+
+  const html = wysiwyg(sampleJSON, {}, {
+    bold: (text: string) => `<b class="custom-bold">${text}</b>`
+  });
+  expect(html).toBe('<p><b class="custom-bold">Bold text</b></p>');
+});
+
+test('add new mark renderer', () => {
+  const sampleJSON = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          {
+            type: "text",
+            text: "Highlighted text",
+            marks: [{ type: "highlight" }]
+          }
+        ]
+      }
+    ]
+  };
+
+  const html = wysiwyg(sampleJSON, {}, {
+    highlight: (text: string) => `<mark>${text}</mark>`
+  });
+  expect(html).toBe('<p><mark>Highlighted text</mark></p>');
+});
+
+test('override link mark', () => {
+    const sampleJSON = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: "Link text",
+              marks: [{ type: "link", attrs: { href: "https://example.com", target: "_blank" } }]
+            }
+          ]
+        }
+      ]
+    };
+  
+    const html = wysiwyg(sampleJSON, {}, {
+      link: (text: string, mark: any) => `<a href="${mark.attrs.href}" class="custom-link">${text}</a>`
+    });
+    expect(html).toBe('<p><a href="https://example.com" class="custom-link">Link text</a></p>');
+  });
+
+test('render single paragraph node', () => {
+  const node = {
+    type: "paragraph",
+    content: [
+      {
+        type: "text",
+        text: "Hello World"
+      }
+    ]
+  };
+
+  const html = wysiwyg(node);
+  expect(html).toBe('<p>Hello World</p>');
+});
+
+test('render single heading node', () => {
+  const node = {
+    type: "heading",
+    attrs: { level: 2 },
+    content: [
+      {
+        type: "text",
+        text: "My Heading"
+      }
+    ]
+  };
+
+  const html = wysiwyg(node);
+  expect(html).toBe('<h2>My Heading</h2>');
+});
+
+test('render text node with marks', () => {
+    const node = {
+        type: "text",
+        text: "Bold text",
+        marks: [{ type: "bold" }]
+    };
+    const html = wysiwyg(node);
+    expect(html).toBe('<strong>Bold text</strong>');
+});
