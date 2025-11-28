@@ -287,3 +287,44 @@ test('override link mark', () => {
     });
     expect(html).toBe('<p><a href="https://example.com" class="custom-link">Link text</a></p>');
   });
+
+test('render single paragraph node', () => {
+  const node = {
+    type: "paragraph",
+    content: [
+      {
+        type: "text",
+        text: "Hello World"
+      }
+    ]
+  };
+
+  const html = wysiwyg(node);
+  expect(html).toBe('<p>Hello World</p>');
+});
+
+test('render single heading node', () => {
+  const node = {
+    type: "heading",
+    attrs: { level: 2 },
+    content: [
+      {
+        type: "text",
+        text: "My Heading"
+      }
+    ]
+  };
+
+  const html = wysiwyg(node);
+  expect(html).toBe('<h2>My Heading</h2>');
+});
+
+test('render text node with marks', () => {
+    const node = {
+        type: "text",
+        text: "Bold text",
+        marks: [{ type: "bold" }]
+    };
+    const html = wysiwyg(node);
+    expect(html).toBe('<strong>Bold text</strong>');
+});

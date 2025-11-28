@@ -167,6 +167,18 @@ const html = wysiwyg(model.content.json, {
 
 By default the most common nodes and marks are handled, but you can override them by passing a function with the node or mark name. See `src/wysiwyg.ts` for details.
 
+### Rendering Single Nodes
+
+If you are iterating over the JSON nodes yourself (e.g. using another library), you can use `wysiwyg` to render individual nodes:
+
+```js
+const nodes = model.content.json.content;
+nodes.forEach(node => {
+  const html = wysiwyg(node);
+  console.log(html);
+});
+```
+
 # Development
 
 ```bash

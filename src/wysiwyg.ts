@@ -5,19 +5,25 @@
  * This function traverses the JSON tree and converts each node into its corresponding HTML representation.
  * It supports custom renderers for both nodes (like paragraphs, headings) and marks (like bold, italic).
  * 
- * @param {any} json - The ProseMirror/TipTap JSON object to render.
+ * @param {any} json - The ProseMirror/TipTap JSON object to render. This can be the full document (type: 'doc') or a single node (e.g. type: 'paragraph').
  * @param {Object} [nodeRenderers] - Optional custom renderers for nodes. Keys are node types (e.g., 'paragraph', 'image'), and values are functions that return HTML strings.
  * @param {Object} [markRenderers] - Optional custom renderers for marks. Keys are mark types (e.g., 'bold', 'link'), and values are functions that take the text and mark object, returning an HTML string.
  * 
  * @returns {string} The rendered HTML string.
  * 
  * @example
+ * // Render full document
  * const json = { type: 'doc', content: [...] };
  * const html = wysiwyg(json, {
  *   image: ({ attrs }) => `<img src="${attrs.src}" class="custom-image" />`
  * }, {
  *   bold: (text) => `<span class="bold">${text}</span>`
  * });
+ * 
+ * @example
+ * // Render a single node
+ * const node = { type: 'paragraph', content: [{ type: 'text', text: 'Hello' }] };
+ * const html = wysiwyg(node); // <p>Hello</p>
  */
 function wysiwyg(json: any, nodeRenderers?: any, markRenderers?: any) {
 
