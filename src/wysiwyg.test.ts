@@ -328,3 +328,17 @@ test('render text node with marks', () => {
     const html = wysiwyg(node);
     expect(html).toBe('<strong>Bold text</strong>');
 });
+
+test('render image with object source', () => {
+  const node = {
+    type: 'image',
+    attrs: {
+      src: { source: 'https://example.com/image.png' },
+      alt: 'Example Image',
+      title: 'An example image'
+    }
+  };
+
+  const html = wysiwyg(node);
+  expect(html).toBe('<img src="https://example.com/image.png" alt="Example Image" title="An example image" />');
+});

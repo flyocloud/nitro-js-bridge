@@ -55,7 +55,10 @@ function wysiwyg(json: any, nodeRenderers?: any, markRenderers?: any) {
     }).join('')}`,
     hardBreak: () => `<br />`,
     blockquote: ({ content }: { content: any[] }, renderNode: any) => `<blockquote>${content.map(child => renderNode(child)).join('')}</blockquote>`,
-    image: ({ attrs }: { attrs: { src: string, alt: string, title: string } }) => `<img src="${attrs.src}" alt="${attrs.alt}" title="${attrs.title}" />`,
+    image: ({ attrs }: { attrs: { src: any, alt: string, title: string } }) => {
+      const src = (typeof attrs.src === 'object' && attrs.src?.source) ? attrs.src.source : attrs.src;
+      return `<img src="${src}" alt="${attrs.alt}" title="${attrs.title}" />`
+    },
     youtube: ({ attrs }: { attrs: { src: string, start: string } }) => `<iframe width="560" height="315" src="${attrs.src}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`,
     text: ({ sanitizedText, marks }: { sanitizedText: string, marks: any[] }) => {
       let renderedText = sanitizedText;
