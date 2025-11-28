@@ -222,7 +222,7 @@
 
 "@rollup/rollup-linux-x64-musl@4.5.1":
   version "4.5.1"
-  resolved "https://registry.yarnpkg.com/@rollup/rollup-linux-x64-musl/-/rollup-linux-x64-musl-4.5.1.tgz#9cc8c0ea1c0e0d3b18888d5b2fd51ef6c9b42481"
+  resolved "https://registry.npmjs.org/@rollup/rollup-linux-x64-musl/-/rollup-linux-x64-musl-4.5.1.tgz"
   integrity sha512-ZRETMFA0uVukUC9u31Ed1nx++29073goCxZtmZARwk5aF/ltuENaeTtRVsSQzFlzdd4J6L3qUm+EW8cbGt0CKQ==
 
 "@rollup/rollup-win32-arm64-msvc@4.5.1":

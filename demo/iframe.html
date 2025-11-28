@@ -7,6 +7,14 @@
   <style>
     body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 20px; }
     .block { padding: 18px; margin: 12px 0; background: #fff; }
+    .hover-card {
+      transition: background-color 0.3s, transform 0.3s;
+      cursor: pointer;
+    }
+    .hover-card:hover {
+      background-color: #f0f0f0;
+      transform: translateY(-5px);
+    }
   </style>
 </head>
 <body>
@@ -32,6 +40,22 @@
     </div>
   </div>
 
+  <h3>Card with Link</h3>
+  <div class="block" id="card-link">
+    <div style="padding: 20px; border: 1px solid #ccc;">
+      <h4>Card Title</h4>
+      <p>Some content here. <a href="#" onclick="alert('Link clicked!'); return false;">Click me</a></p>
+    </div>
+  </div>
+
+  <h3>Card with Hover Effects</h3>
+  <div class="block hover-card" id="card-hover">
+    <div style="padding: 20px; border: 1px solid #ccc;">
+      <h4>Hover Me</h4>
+      <p>This card has hover effects.</p>
+    </div>
+  </div>
+
   <script type="module">
     // Import the local module via vite dev server. Vite will resolve /src paths.
     import { highlightAndClick } from '/src/index.ts';
@@ -44,7 +68,9 @@
       { id: 'block-x', uid: 'uid-x' },
       { id: 'tiny-hr', uid: 'uid-hr' },
       { id: 'image-block', uid: 'uid-image' },
-      { id: 'image-content', uid: 'uid-image-content' }
+      { id: 'image-content', uid: 'uid-image-content' },
+      { id: 'card-link', uid: 'uid-card-link' },
+      { id: 'card-hover', uid: 'uid-card-hover' }
     ];
 
     // Extra test cases: transformed parent, overflow hidden, rotated, tiny pixels, scroll container

@@ -86,7 +86,8 @@ test('highlightAndClick sets up hover effects when embedded and element provided
   const mockDoc: any = {
     createElement: vi.fn((tag?: string) => {
       const o = makeMockOverlay();
-      // if it's a button, include type property
+      // Track tag name and set type for buttons
+      (o as any).tagName = tag?.toUpperCase() || '';
       if (tag === 'button') o.type = 'button';
       created.push(o);
       return o;
@@ -128,6 +129,13 @@ test('highlightAndClick sets up hover effects when embedded and element provided
   // Verify hover listeners removed and overlay removed from body
   expect(mockElement.removeEventListener).toHaveBeenCalledTimes(2);
   expect((global as any).document.body.removeChild).toHaveBeenCalledTimes(2);
+
+  // Verify the pad element (the div element, not button) has pointer-events: none
+  // to allow clicks to pass through to the original element
+  const padElement = created.find((el: any) => el.tagName === 'DIV');
+  expect(padElement).toBeDefined();
+  expect(padElement.style.pointerEvents).toBe('none');
+
   // Restore globals
   (global as any).document = originalDocument;
   (global as any).getComputedStyle = originalGetComputedStyle;
