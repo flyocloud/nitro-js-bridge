@@ -49,7 +49,7 @@ function highlightAndClick(blockUid: string, hostElement?: HTMLElement) {
   pad.style.left = '0px';
   pad.style.zIndex = '9998';           // just under the button
   pad.style.display = 'none';          // shown only while hovering
-  pad.style.pointerEvents = 'auto';    // must receive hover/clicks
+  pad.style.pointerEvents = 'none';    // allow clicks to pass through to original element
   pad.style.background = 'transparent';
   pad.style.border = 'none';
   // (No outline; stays invisible)
