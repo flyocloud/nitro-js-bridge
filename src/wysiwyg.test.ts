@@ -196,3 +196,94 @@ test('lists', () => {
   
   expect(html).toBe('<ul><li>Bullet Item 1</li><li>Bullet Item 2</li></ul><ol><li>Ordered Item 1</li><li>Ordered Item 2</li></ol>');
 });
+
+
+test('default mark rendering', () => {
+  const sampleJSON = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          {
+            type: "text",
+            text: "Bold text",
+            marks: [{ type: "bold" }]
+          }
+        ]
+      }
+    ]
+  };
+
+  const html = wysiwyg(sampleJSON);
+  expect(html).toBe('<p><strong>Bold text</strong></p>');
+});
+
+test('override bold mark', () => {
+  const sampleJSON = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          {
+            type: "text",
+            text: "Bold text",
+            marks: [{ type: "bold" }]
+          }
+        ]
+      }
+    ]
+  };
+
+  const html = wysiwyg(sampleJSON, {}, {
+    bold: (text: string) => `<b class="custom-bold">${text}</b>`
+  });
+  expect(html).toBe('<p><b class="custom-bold">Bold text</b></p>');
+});
+
+test('add new mark renderer', () => {
+  const sampleJSON = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          {
+            type: "text",
+            text: "Highlighted text",
+            marks: [{ type: "highlight" }]
+          }
+        ]
+      }
+    ]
+  };
+
+  const html = wysiwyg(sampleJSON, {}, {
+    highlight: (text: string) => `<mark>${text}</mark>`
+  });
+  expect(html).toBe('<p><mark>Highlighted text</mark></p>');
+});
+
+test('override link mark', () => {
+    const sampleJSON = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: "Link text",
+              marks: [{ type: "link", attrs: { href: "https://example.com", target: "_blank" } }]
+            }
+          ]
+        }
+      ]
+    };
+  
+    const html = wysiwyg(sampleJSON, {}, {
+      link: (text: string, mark: any) => `<a href="${mark.attrs.href}" class="custom-link">${text}</a>`
+    });
+    expect(html).toBe('<p><a href="https://example.com" class="custom-link">Link text</a></p>');
+  });

@@ -1,6 +1,16 @@
 
 // Rendering logic for the updated ProseMirror JSON
-function wysiwyg(json: any, nodeRenderers?: any) {
+function wysiwyg(json: any, nodeRenderers?: any, markRenderers?: any) {
+
+  const defaultMarkRenderers: { [key: string]: (text: string, mark: any) => string } = {
+    bold: (text) => `<strong>${text}</strong>`,
+    italic: (text) => `<em>${text}</em>`,
+    underline: (text) => `<u>${text}</u>`,
+    strikethrough: (text) => `<del>${text}</del>`,
+    link: (text, mark) => `<a href="${mark.attrs.href}" target="${mark.attrs.target}">${text}</a>`,
+  };
+
+  const combinedMarkRenderers = { ...defaultMarkRenderers, ...markRenderers };
 
   const defaultNodeRenderers = {
     default: ({ type }: { type: any[] }) => `<div style="border:1px solid red">Node "${type}" is not defined.</div>`,
@@ -23,18 +33,10 @@ function wysiwyg(json: any, nodeRenderers?: any) {
       let renderedText = sanitizedText;
       if (marks) {
         marks.forEach(mark => {
-          if (mark.type === "bold") {
-            renderedText = `<strong>${renderedText}</strong>`;
-          } else if (mark.type === "italic") {
-            renderedText = `<em>${renderedText}</em>`;
-          } else if (mark.type === "underline") {
-            renderedText = `<u>${renderedText}</u>`;
-          } else if (mark.type === "strikethrough") {
-            renderedText = `<del>${renderedText}</del>`;
-          } else if (mark.type === "link") {
-            renderedText = `<a href="${mark.attrs.href}" target="${mark.attrs.target}">${renderedText}</a>`;
+          const renderer = combinedMarkRenderers[mark.type];
+          if (renderer) {
+            renderedText = renderer(renderedText, mark);
           }
-          // Add more conditions for other mark types (underline, strikethrough, etc.) if needed
         });
       }
       return renderedText;

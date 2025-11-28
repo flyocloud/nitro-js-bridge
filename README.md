@@ -145,7 +145,12 @@ if (window.nitroJsBridge.isEmbedded()) {
 
 ## WYSIWYG Custom Render
 
-Since Flyo uses ProseMirror/TipTap JSON, the `wysiwyg` helper renders that JSON to HTML and lets you override node renderers.
+Since Flyo uses ProseMirror/TipTap JSON, the `wysiwyg` helper renders that JSON to HTML and lets you override node and mark renderers.
+
+The function accepts three arguments:
+1. `json`: The ProseMirror/TipTap JSON object.
+2. `nodeRenderers` (optional): An object to override node renderers (e.g. paragraph, heading, image).
+3. `markRenderers` (optional): An object to override mark renderers (e.g. bold, italic, link).
 
 Example:
 
@@ -154,10 +159,13 @@ const html = wysiwyg(model.content.json, {
   image: ({ attrs }) => `<img src="${attrs.src}" alt="${attrs.alt}" title="${attrs.title}" class="responsive" />`,
   youtube: ({ attrs }) => `<iframe width="560" height="315" src="${attrs.src}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`,
   accordion: ({ attrs }) => `<details><summary>${attrs.title}</summary>${attrs.text}</details>`,
+}, {
+  bold: (text) => `<b class="bold">${text}</b>`,
+  link: (text, mark) => `<a href="${mark.attrs.href}" target="_blank">${text}</a>`,
 });
 ```
 
-By default the most common nodes are handled, but you can override them by passing a function with the node name. See `src/wysiwyg.ts` for details.
+By default the most common nodes and marks are handled, but you can override them by passing a function with the node or mark name. See `src/wysiwyg.ts` for details.
 
 # Development
 
