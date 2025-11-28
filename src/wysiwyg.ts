@@ -9,7 +9,12 @@ function wysiwyg(json: any, nodeRenderers?: any) {
     paragraph: ({ content }: { content: any[] }, renderNode: any) => `<p>${content.map(renderNode).join('')}</p>`,
     bulletList: ({ content }: { content: any[] }, renderNode: any) => `<ul>${content.map(child => `<li>${renderNode(child)}</li>`).join('')}</ul>`,
     orderedList: ({ content }: { content: any[] }, renderNode: any) => `<ol>${content.map(child => `<li>${renderNode(child)}</li>`).join('')}</ol>`,
-    listItem: ({ content }: { content: any[] }, renderNode: any) => `${content.map(child => renderNode(child)).join('')}`,
+    listItem: ({ content }: { content: any[] }, renderNode: any) => `${content.map(child => {
+      if (child.type === 'paragraph') {
+        return (child.content || []).map(renderNode).join('')
+      }
+      return renderNode(child)
+    }).join('')}`,
     hardBreak: () => `<br />`,
     blockquote: ({ content }: { content: any[] }, renderNode: any) => `<blockquote>${content.map(child => renderNode(child)).join('')}</blockquote>`,
     image: ({ attrs }: { attrs: { src: string, alt: string, title: string } }) => `<img src="${attrs.src}" alt="${attrs.alt}" title="${attrs.title}" />`,
