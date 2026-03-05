@@ -23,7 +23,7 @@ For vanilla websites or quick prototyping, you can use the CDN UMD build:
 <script src="https://unpkg.com/@flyo/nitro-js-bridge@1/dist/nitro-js-bridge.umd.cjs"></script>
 ```
 
-This will make the functions available globally as `window.nitroJsBridge.open`, `window.nitroJsBridge.highlightAndClick`, `window.nitroJsBridge.reload`, etc.
+This will make the functions available globally as `window.nitroJsBridge.open`, `window.nitroJsBridge.highlightAndClick`, `window.nitroJsBridge.reload`, `window.nitroJsBridge.scrollTo`, etc.
 
 ## Usage
 
@@ -112,6 +112,39 @@ if (window.nitroJsBridge.reload) {
   window.nitroJsBridge.reload();
 }
 </script>
+```
+
+### scrollTo()
+
+The `scrollTo()` helper registers a message listener that will scroll to a specific block on the page when Flyo's preview frame sends a `scrollTo` message. The target block is identified by its uid via the `data-flyo-uid` attribute.
+
+#### ESM
+
+```js
+import { scrollTo } from '@flyo/nitro-js-bridge';
+
+// Register the scrollTo listener (only activates when embedded)
+scrollTo();
+```
+
+#### CDN
+
+```html
+<script src="https://unpkg.com/@flyo/nitro-js-bridge@1/dist/nitro-js-bridge.umd.cjs"></script>
+<script>
+if (window.nitroJsBridge.scrollTo) {
+  // Register the scrollTo listener (only activates when embedded)
+  window.nitroJsBridge.scrollTo();
+}
+</script>
+```
+
+Make sure your block elements have the `data-flyo-uid` attribute set to the block's uid so the scroll target can be resolved:
+
+```html
+<div data-flyo-uid="block-123">
+  <h2>Block Content</h2>
+</div>
 ```
 
 ## Utility Functions
