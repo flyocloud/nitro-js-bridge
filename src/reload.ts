@@ -1,4 +1,5 @@
 import { isEmbedded } from './utils';
+import { registerEditorHandshake } from './editorConnection';
 
 function reload() {
     if (typeof window === "undefined") return;
@@ -11,6 +12,8 @@ function reload() {
             window.location.reload();
         }
     })
+
+    registerEditorHandshake();
 }
 
 export default reload;
