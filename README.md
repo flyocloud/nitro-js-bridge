@@ -1,10 +1,5 @@
 # Flyo Nitro Js Bridge
 
-This is can be used in backend and frontend projects eitherway to make the bridge between Flyo Cloud and your application.
-
-## Installation
-# Flyo Nitro Js Bridge
-
 This library provides a small bridge that lets a website integrate with Flyo's preview iframe. It works in both backend and frontend projects and also supports a CDN build for quick prototyping.
 
 ## Installation
@@ -145,6 +140,23 @@ Make sure your block elements have the `data-flyo-uid` attribute set to the bloc
 <div data-flyo-uid="block-123">
   <h2>Block Content</h2>
 </div>
+```
+
+## Editor Connection Handshake (since 1.4.0)
+
+When the website runs inside the Flyo editor iframe, the bridge announces itself to the editor and answers its connection probes:
+
+- On boot it sends `{ action: 'liveEditReady' }` to the embedding window.
+- It answers the editor's `{ action: 'liveEditPing' }` probe with `liveEditReady` (only when the probe comes from the embedding window; its `event.origin` is also remembered as the exact targetOrigin for all later outbound messages, so click-to-edit works on any editor host).
+
+The editor uses this to distinguish a working live-edit preview from a blocked frame or a page without live edit. Without the handshake, the editor shows a dismissible "no connection" hint with troubleshooting guidance.
+
+**You normally do not need to do anything**: the handshake registers automatically (at most once per document) when `reload()` is called — the canonical live-edit boot function every integration should register anyway. Only a custom setup that does not use `reload()` should register it explicitly:
+
+```js
+import { registerEditorHandshake } from '@flyo/nitro-js-bridge';
+
+registerEditorHandshake();
 ```
 
 ## Utility Functions

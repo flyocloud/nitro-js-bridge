@@ -1,5 +1,11 @@
-import { expect, test } from 'vitest';
-import { isEmbedded, resolveWindow } from './utils';
+import { beforeEach, expect, test } from 'vitest';
+import { isEmbedded, resolveWindow, getEditorOrigin, rememberEditorOrigin } from './utils';
+
+beforeEach(() => {
+  // getEditorOrigin prefers the module-level origin learned from a ping — reset it
+  // so each test exercises the heuristics it sets up.
+  rememberEditorOrigin(null);
+});
 
 // Mock window object for testing
 const mockWindow = (isTop: boolean) => {
@@ -80,4 +86,86 @@ test('resolveWindow returns parent when in iframe', () => {
   expect(result).toBe(parent);
 
   globalThis.window = originalWindow;
+});
+
+test('getEditorOrigin returns the Flyo editor when window is undefined', () => {
+  const originalWindow = globalThis.window;
+  delete (globalThis as any).window;
+
+  expect(getEditorOrigin()).toBe('https://flyo.cloud');
+
+  globalThis.window = originalWindow;
+});
+
+test('getEditorOrigin prefers the origin learned from the editor ping', () => {
+  const originalWindow = globalThis.window;
+  globalThis.window = { location: { ancestorOrigins: ['https://ancestor.example'] } } as any;
+
+  rememberEditorOrigin('https://konsole.flyo.dev');
+  expect(getEditorOrigin()).toBe('https://konsole.flyo.dev');
+
+  rememberEditorOrigin(null);
+  expect(getEditorOrigin()).toBe('https://ancestor.example');
+
+  globalThis.window = originalWindow;
+});
+
+test('getEditorOrigin prefers ancestorOrigins over the referrer', () => {
+  const originalWindow = globalThis.window;
+  const originalDocument = (globalThis as any).document;
+  globalThis.window = { location: { ancestorOrigins: ['https://flyo.cloud'], origin: 'https://site.example' } } as any;
+  (globalThis as any).document = { referrer: 'https://other.example/page' };
+
+  expect(getEditorOrigin()).toBe('https://flyo.cloud');
+
+  globalThis.window = originalWindow;
+  (globalThis as any).document = originalDocument;
+});
+
+test('getEditorOrigin falls back to a cross-origin referrer', () => {
+  const originalWindow = globalThis.window;
+  const originalDocument = (globalThis as any).document;
+  globalThis.window = { location: { origin: 'https://site.example' } } as any;
+  (globalThis as any).document = { referrer: 'https://konsole.flyo.dev/some/path' };
+
+  expect(getEditorOrigin()).toBe('https://konsole.flyo.dev');
+
+  globalThis.window = originalWindow;
+  (globalThis as any).document = originalDocument;
+});
+
+test('getEditorOrigin skips a same-origin referrer (in-site navigation)', () => {
+  const originalWindow = globalThis.window;
+  const originalDocument = (globalThis as any).document;
+  globalThis.window = { location: { origin: 'https://site.example' } } as any;
+  (globalThis as any).document = { referrer: 'https://site.example/previous-page' };
+
+  expect(getEditorOrigin()).toBe('https://flyo.cloud');
+
+  globalThis.window = originalWindow;
+  (globalThis as any).document = originalDocument;
+});
+
+test('getEditorOrigin defaults to the Flyo editor without ancestorOrigins and referrer', () => {
+  const originalWindow = globalThis.window;
+  const originalDocument = (globalThis as any).document;
+  globalThis.window = { location: {} } as any;
+  (globalThis as any).document = { referrer: '' };
+
+  expect(getEditorOrigin()).toBe('https://flyo.cloud');
+
+  globalThis.window = originalWindow;
+  (globalThis as any).document = originalDocument;
+});
+
+test('getEditorOrigin defaults to the Flyo editor for an invalid referrer', () => {
+  const originalWindow = globalThis.window;
+  const originalDocument = (globalThis as any).document;
+  globalThis.window = { location: {} } as any;
+  (globalThis as any).document = { referrer: 'not a url' };
+
+  expect(getEditorOrigin()).toBe('https://flyo.cloud');
+
+  globalThis.window = originalWindow;
+  (globalThis as any).document = originalDocument;
 });

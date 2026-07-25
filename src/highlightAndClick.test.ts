@@ -26,10 +26,10 @@ afterEach(() => {
 
 test('highlightAndClick returns open handler when not embedded', () => {
   mockIsEmbedded.mockReturnValue(false);
-  
+
   const result = highlightAndClick('test-uid');
   expect(typeof result).toBe('function');
-  
+
   // Call the returned function
   result();
   expect(mockOpen).toHaveBeenCalledWith('test-uid');
