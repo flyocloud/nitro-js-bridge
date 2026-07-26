@@ -10,8 +10,10 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     strategy:
+      # One node version failing should not cancel the report for the others.
+      fail-fast: false
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [20.x, 22.x]
 
     steps:
       - name: Checkout repository
@@ -21,16 +23,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'yarn'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       - name: Build
-        run: yarn build
+        run: npm run build
 
       - name: Run tests
-        run: yarn test
+        run: npm test
 
       - name: Upload test results (if any)
         if: failure()
@@ -41,7 +43,6 @@ jobs:
             ./**/coverage/**
             ./**/test-results/**
             npm-debug.log
-            yarn-error.log
 
   # The overlay must not disturb the sites the bridge is embedded in, which only
   # a real browser can tell us. Drives demo/ with a real mouse in all three
@@ -57,10 +58,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'yarn'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       - name: Resolve playwright version
         id: playwright
@@ -75,14 +76,14 @@ jobs:
 
       - name: Install browsers
         if: steps.browser-cache.outputs.cache-hit != 'true'
-        run: yarn playwright install --with-deps chromium firefox webkit
+        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Install browser system dependencies
         if: steps.browser-cache.outputs.cache-hit == 'true'
-        run: yarn playwright install-deps chromium firefox webkit
+        run: npx playwright install-deps chromium firefox webkit
 
       - name: Run browser tests
-        run: yarn test:e2e
+        run: npm run test:e2e
 
       - name: Upload playwright report
         if: failure()

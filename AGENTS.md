@@ -64,9 +64,20 @@ Do not read the `overflow`, `background` or other shorthands from
   - It serves the demo itself, and reuses your `npm run dev` server if one is
     already on 5174. If that port is busy with something else, use
     `PLAYWRIGHT_PORT=5188 npm run test:e2e`.
-- `npm install` in this repo **rewrites `yarn.lock`** (npm 7+ syncs a yarn
-  lockfile it finds). CI installs with `yarn install --frozen-lockfile`, so check
-  `git diff yarn.lock` after any install and keep it to the entries you meant to
-  add — `yarn add` re-resolves the whole tree.
+
+## Package manager
+
+**npm only.** `package-lock.json` is the one lockfile; there is no `yarn.lock`
+and none should be added — a second lockfile drifts from the first and npm 7+
+silently rewrites a yarn lockfile it finds. CI installs with `npm ci`, so the
+lockfile has to be in the commit whenever `package.json` dependencies change.
+
+When adding a devDependency, check `git diff package-lock.json` and keep it to
+the entries you meant to add.
+
+Node is a **build-time** concern only — what ships is browser code — so the CI
+matrix (node 20 and 22) exists to check the toolchain, not to constrain
+integrators. Do not add an `engines` field to `package.json`: it would push a
+node requirement onto every site that installs the bridge.
 - Anything about not disturbing the site needs a test that asserts the *absence*
   of an effect (host untouched, event not cancelled, node count unchanged).

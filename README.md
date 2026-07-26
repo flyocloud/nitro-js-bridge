@@ -249,7 +249,10 @@ nodes.forEach(node => {
 
 # Development
 
+This project uses **npm**; `package-lock.json` is the only lockfile.
+
 ```bash
+npm install
 npm run preview
 ```
 
@@ -265,3 +268,12 @@ The demo is a fake Flyo editor: the left side is an iframe running a website tha
 Every element in `demo/iframe.html` with a `data-flyo-uid` attribute gets `highlightAndClick()` attached. The demo page deliberately includes awkward cases — tiny elements, rotated and scaled parents, clipped and scrollable containers — to check the overlay positioning.
 
 Edits in `src/` are picked up on reload, the demo imports the TypeScript sources directly.
+
+## Tests
+
+```bash
+npm test          # unit tests (vitest, node environment)
+npm run test:e2e  # overlay behaviour in real Chromium, Firefox and WebKit
+```
+
+The browser suite needs the browsers once (`npx playwright install chromium firefox webkit`). It serves the demo itself and reuses a dev server already listening on 5174 — if that port is busy, use `PLAYWRIGHT_PORT=5188 npm run test:e2e`. Both suites run on every push; the browser suite as its own `browser-tests` job.
