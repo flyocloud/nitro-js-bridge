@@ -231,7 +231,18 @@ nodes.forEach(node => {
 # Development
 
 ```bash
-yarn dev
+npm run preview
 ```
 
-Visit `http://localhost:5174/demo/index.html` to see the demo page.
+This starts the dev server on `http://localhost:5174` and opens the demo. (`npm run dev` does the same without opening a browser.)
+
+The demo is a fake Flyo editor: the left side is an iframe running a website that uses the bridge straight from `src/`, the right side is the editor panel. It lets you test the full message flow without a Flyo account:
+
+- **Connection** — shows green once the page answers the `liveEditPing` handshake with `liveEditReady` (see `registerEditorHandshake()`). "Send liveEditPing" probes again.
+- **Send pageRefresh** — triggers `reload()` in the embedded page.
+- **scrollTo** — pick a block uid and send a `scrollTo` message; the preview scrolls to that block.
+- **Messages** — logs every `postMessage` in both directions, including the `openEdit` payload sent when you hover a block and click its pencil button.
+
+Every element in `demo/iframe.html` with a `data-flyo-uid` attribute gets `highlightAndClick()` attached. The demo page deliberately includes awkward cases — tiny elements, rotated and scaled parents, clipped and scrollable containers — to check the overlay positioning.
+
+Edits in `src/` are picked up on reload, the demo imports the TypeScript sources directly.

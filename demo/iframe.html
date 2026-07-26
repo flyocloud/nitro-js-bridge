@@ -3,133 +3,99 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Nitro Demo Iframe</title>
+  <title>Nitro Demo Preview</title>
   <style>
     body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 20px; }
-    .block { padding: 18px; margin: 12px 0; background: #fff; }
-    .hover-card {
-      transition: background-color 0.3s, transform 0.3s;
-      cursor: pointer;
-    }
-    .hover-card:hover {
-      background-color: #f0f0f0;
-      transform: translateY(-5px);
-    }
+    h3 { margin-top: 28px; color: #52525b; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .block { padding: 18px; margin: 12px 0; background: #fff; border: 1px dashed #e4e4e7; }
+    .hover-card { transition: background-color 0.3s, transform 0.3s; cursor: pointer; }
+    .hover-card:hover { background-color: #f0f0f0; transform: translateY(-5px); }
+    .boot { font-size: 12px; color: #71717a; }
   </style>
 </head>
 <body>
   <h2>Embedded Preview</h2>
+  <p class="boot">Every element with a <code>data-flyo-uid</code> gets <code>highlightAndClick()</code>. Hover one to
+    see the pencil overlay, click it to send an <code>openEdit</code> message to the editor panel.</p>
 
-  <div class="block" id="block-a">Block A — hover me and click the pencil</div>
-  <div class="block" id="block-b" style="height:500px">Block B — hover me and click the pencil</div>
-  <div class="block" id="block-c">Block C — hover me and click the pencil</div>
-  <div class="block" id="block-x" style="background-color: aquamarine; height: 800px;">Block X — hover me and click the pencil</div>
+  <h3>Plain blocks</h3>
+  <div class="block" data-flyo-uid="uid-a">Block A — hover me and click the pencil</div>
+  <div class="block" data-flyo-uid="uid-b" style="height:500px">Block B — a tall one</div>
+  <div class="block" data-flyo-uid="uid-c">Block C</div>
+  <div class="block" data-flyo-uid="uid-x" style="background-color: aquamarine; height: 800px;">Block X — very tall</div>
 
-  <h3>Tiny element example</h3>
+  <h3>Tiny element</h3>
   <div class="block">
-    <div id="tiny-hr" class="flyo-preview-highlight" data-flyo-uid="fab4fbdf-b97b-4a88-a423-2712604bf71d">
+    <div class="flyo-preview-highlight" data-flyo-uid="uid-hr">
       <hr style="border:0;height:3px;background:#0b72ff;max-width:50px;margin:8px auto" />
     </div>
   </div>
 
   <h3>Background image block (may clip overlay if positioned inside)</h3>
-  <div class="block" id="image-block" style="position:relative;height:160px;padding:0;overflow:hidden;">
-    <img src="https://via.placeholder.com/800x300.png?text=Background" alt="bg" style="width:100%;height:100%;object-fit:cover;display:block;" />
-    <div id="image-content" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;">
+  <div class="block" data-flyo-uid="uid-image" style="position:relative;height:160px;padding:0;overflow:hidden;">
+    <svg viewBox="0 0 800 300" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">
+      <rect width="800" height="300" fill="#3f3f46" />
+    </svg>
+    <div data-flyo-uid="uid-image-content" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;">
       <strong>Image block — hover center area</strong>
     </div>
   </div>
 
-  <h3>Card with Link</h3>
-  <div class="block" id="card-link">
+  <h3>Card with link</h3>
+  <div class="block" data-flyo-uid="uid-card-link">
     <div style="padding: 20px; border: 1px solid #ccc;">
       <h4>Card Title</h4>
       <p>Some content here. <a href="#" onclick="alert('Link clicked!'); return false;">Click me</a></p>
     </div>
   </div>
 
-  <h3>Card with Hover Effects</h3>
-  <div class="block hover-card" id="card-hover">
+  <h3>Card with hover effects</h3>
+  <div class="block hover-card" data-flyo-uid="uid-card-hover">
     <div style="padding: 20px; border: 1px solid #ccc;">
       <h4>Hover Me</h4>
       <p>This card has hover effects.</p>
     </div>
   </div>
 
+  <h3>Transformed / scaled parent</h3>
+  <div class="block" style="transform:scale(0.9);transform-origin:0 0;">
+    <div data-flyo-uid="uid-scaled" style="padding:18px;background:#f9fafb">Scaled child — hover me</div>
+  </div>
+
+  <h3>Overflow hidden clipping</h3>
+  <div class="block" style="overflow:hidden;height:80px;position:relative;">
+    <div data-flyo-uid="uid-clipped" style="position:absolute;left:70%;top:60%;width:200px;height:60px;background:#eee">Clipped child (partially outside)</div>
+  </div>
+
+  <h3>Rotated element</h3>
+  <div class="block">
+    <div data-flyo-uid="uid-rotated" style="display:inline-block;transform:rotate(-8deg);padding:6px;background:#fff">Rotated element</div>
+  </div>
+
+  <h3>Very tiny pixels</h3>
+  <div class="block">
+    <div data-flyo-uid="uid-tiny-px" style="width:2px;height:2px;background:#0b72ff;margin:12px auto"></div>
+  </div>
+
+  <h3>Scroll container</h3>
+  <div class="block" style="height:120px;overflow:auto;padding:0">
+    <div style="height:300px;padding:18px">
+      <div data-flyo-uid="uid-scroll" style="margin-top:220px;background:#fff;padding:12px">Scroll down to reveal target</div>
+    </div>
+  </div>
+
   <script type="module">
-    // Import the local module via vite dev server. Vite will resolve /src paths.
-    import { highlightAndClick } from '/src/index.ts';
+    // Imported straight from source through the vite dev server, so edits in
+    // /src show up here on reload.
+    import { highlightAndClick, reload, scrollTo } from '/src/index.ts';
 
-    // create a fake block UIDs for demo
-    const blocks = [
-      { id: 'block-a', uid: 'uid-a' },
-      { id: 'block-b', uid: 'uid-b' },
-      { id: 'block-c', uid: 'uid-c' },
-      { id: 'block-x', uid: 'uid-x' },
-      { id: 'tiny-hr', uid: 'uid-hr' },
-      { id: 'image-block', uid: 'uid-image' },
-      { id: 'image-content', uid: 'uid-image-content' },
-      { id: 'card-link', uid: 'uid-card-link' },
-      { id: 'card-hover', uid: 'uid-card-hover' }
-    ];
+    // reload() listens for pageRefresh and registers the editor handshake,
+    // scrollTo() listens for scrollTo messages — both no-ops outside an iframe.
+    reload();
+    scrollTo();
 
-    // Extra test cases: transformed parent, overflow hidden, rotated, tiny pixels, scroll container
-    const extraHtml = `
-      <h3>Transformed / scaled parent</h3>
-      <div class="block" id="scaled-parent" style="transform:scale(0.9);transform-origin:0 0;">
-        <div id="scaled-child" style="padding:18px;background:#f9fafb">Scaled child — hover me</div>
-      </div>
-
-      <h3>Overflow hidden clipping</h3>
-      <div class="block" style="overflow:hidden;height:80px;position:relative;" id="clipped-parent">
-        <div id="clipped-child" style="position:absolute;left:70%;top:60%;width:200px;height:60px;background:#eee">Clipped child (partially outside)</div>
-      </div>
-
-      <h3>Rotated element</h3>
-      <div class="block">
-        <div id="rotated" style="display:inline-block;transform:rotate(-8deg);padding:6px;background:#fff">Rotated element</div>
-      </div>
-
-      <h3>Very tiny pixels</h3>
-      <div class="block">
-        <div id="tiny-px" style="width:2px;height:2px;background:#0b72ff;margin:12px auto"></div>
-      </div>
-
-      <h3>Scroll container</h3>
-      <div class="block" style="height:120px;overflow:auto;padding:0">
-        <div style="height:300px;padding:18px">
-          <div id="scroll-target" style="margin-top:220px;background:#fff;padding:12px">Scroll down to reveal target</div>
-        </div>
-      </div>
-    `;
-
-    const container = document.createElement('div');
-    container.innerHTML = extraHtml;
-    document.body.appendChild(container);
-
-    // Add the new test elements to the blocks list so the highlight is attached
-    [
-      { id: 'scaled-child', uid: 'uid-scaled' },
-      { id: 'clipped-child', uid: 'uid-clipped' },
-      { id: 'rotated', uid: 'uid-rotated' },
-      { id: 'tiny-px', uid: 'uid-tiny-px' },
-      { id: 'scroll-target', uid: 'uid-scroll' }
-    ].forEach(b => blocks.push(b));
-
-    blocks.forEach(b => {
-      const el = document.getElementById(b.id);
-      if (!el) return;
-      // call highlightAndClick which will return a cleanup or open function
-      const cleanupOrOpen = highlightAndClick(b.uid, el);
-      // if not embedded, the function will be the open handler; otherwise cleanup function
-      // Add a data attribute for inspection
-      el.dataset.demo = typeof cleanupOrOpen === 'function' ? 'handler' : 'unknown';
-    });
-
-    // For demo: listen for click messages (open() posts messages to parent at flyo.cloud origin)
-    window.addEventListener('message', (ev) => {
-      // forward to parent so the outer page shows messages
-      parent.postMessage(ev.data, '*');
+    document.querySelectorAll('[data-flyo-uid]').forEach((el) => {
+      highlightAndClick(el.dataset.flyoUid, el);
     });
   </script>
 </body>

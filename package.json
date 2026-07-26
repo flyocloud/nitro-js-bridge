@@ -15,8 +15,8 @@
   },
   "scripts": {
     "dev": "vite",
+    "preview": "vite --open",
     "build": "tsc && vite build",
-    "preview": "vite preview",
     "test": "vitest --run"
   },
   "devDependencies": {

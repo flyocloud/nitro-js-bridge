@@ -3,30 +3,186 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Nitro JS Bridge — Demo</title>
+  <title>Nitro JS Bridge — Demo Editor</title>
   <style>
-    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 20px; }
-    iframe { width: 100%; height: 600px; border: 1px solid #ddd; }
-    #messages { margin-top: 12px; }
-    pre { background: #f7f7f8; padding: 8px; border-radius: 4px; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      display: flex;
+      flex-direction: column;
+      background: #f4f4f5;
+      color: #18181b;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: #18181b;
+      color: #fafafa;
+    }
+    header h1 { font-size: 15px; font-weight: 600; margin: 0; }
+    header .hint { font-size: 12px; color: #a1a1aa; }
+    main { flex: 1; display: flex; min-height: 0; }
+    #frame-wrap { flex: 1; padding: 16px; min-width: 0; }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 1px solid #d4d4d8;
+      border-radius: 6px;
+      background: #fff;
+    }
+    aside {
+      width: 360px;
+      flex: none;
+      border-left: 1px solid #d4d4d8;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    section { padding: 14px 16px; border-bottom: 1px solid #e4e4e7; }
+    section.log-section { flex: 1; display: flex; flex-direction: column; min-height: 0; border-bottom: 0; }
+    h2 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #71717a;
+      margin: 0 0 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .status { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #d4d4d8; flex: none; }
+    .dot.on { background: #22c55e; }
+    .dot.off { background: #ef4444; }
+    .row { display: flex; gap: 8px; margin-top: 8px; }
+    .row:first-of-type { margin-top: 0; }
+    button {
+      font: inherit;
+      font-size: 13px;
+      padding: 7px 12px;
+      border: 1px solid #d4d4d8;
+      border-radius: 5px;
+      background: #fafafa;
+      cursor: pointer;
+    }
+    button:hover { background: #f0f0f1; }
+    button.link { border: 0; background: none; padding: 0; font-size: 11px; color: #71717a; text-decoration: underline; }
+    select { font: inherit; font-size: 13px; padding: 6px; border: 1px solid #d4d4d8; border-radius: 5px; flex: 1; min-width: 0; }
+    #log { flex: 1; overflow: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+    #log .entry { padding: 6px 8px; border-radius: 4px; margin-bottom: 4px; background: #f4f4f5; word-break: break-all; }
+    #log .entry.out { background: #eff6ff; }
+    #log .dir { font-weight: 700; margin-right: 6px; }
+    #log .out .dir { color: #2563eb; }
+    #log .in .dir { color: #16a34a; }
+    #log .empty { color: #a1a1aa; padding: 6px 8px; font-family: inherit; font-size: 12px; }
   </style>
 </head>
 <body>
-  <h1>Nitro `highlightAndClick` Demo</h1>
-  <p>This page simulates the Flyo preview: the iframe contains the embedded page which imports the library. Hover the blocks inside the iframe to see the dashed highlight and the small edit overlay.</p>
+  <header>
+    <h1>Nitro JS Bridge — Demo Editor</h1>
+    <span class="hint">this page fakes the Flyo editor, the iframe is your website using the bridge</span>
+  </header>
 
-  <iframe src="/demo/iframe.html" title="Nitro demo iframe"></iframe>
+  <main>
+    <div id="frame-wrap">
+      <iframe id="preview" src="/demo/iframe.html" title="Nitro demo preview"></iframe>
+    </div>
 
-  <h3>Messages from iframe</h3>
-  <div id="messages"></div>
+    <aside>
+      <section>
+        <h2>Connection</h2>
+        <div class="status"><span class="dot" id="dot"></span><span id="status">waiting for handshake…</span></div>
+        <div class="row"><button id="ping">Send liveEditPing</button></div>
+      </section>
+
+      <section>
+        <h2>Editor actions</h2>
+        <div class="row"><button id="refresh">Send pageRefresh (reload)</button></div>
+        <div class="row">
+          <select id="uid"></select>
+          <button id="scroll">scrollTo</button>
+        </div>
+      </section>
+
+      <section class="log-section">
+        <h2>Messages <button class="link" id="clear">clear</button></h2>
+        <div id="log"><div class="empty">No messages yet. Hover a block in the preview and click the pencil.</div></div>
+      </section>
+    </aside>
+  </main>
 
   <script>
+    const frame = document.getElementById('preview');
+    const dot = document.getElementById('dot');
+    const status = document.getElementById('status');
+    const log = document.getElementById('log');
+    const uidSelect = document.getElementById('uid');
+
+    function addLog(direction, data) {
+      const empty = log.querySelector('.empty');
+      if (empty) empty.remove();
+      const entry = document.createElement('div');
+      entry.className = 'entry ' + direction;
+      entry.innerHTML = '<span class="dir">' + (direction === 'out' ? '↑ to page' : '↓ from page') + '</span>';
+      entry.appendChild(document.createTextNode(JSON.stringify(data)));
+      log.prepend(entry);
+    }
+
+    function send(message) {
+      // The real editor knows its own origin; same-origin is fine for the demo.
+      frame.contentWindow.postMessage(message, window.location.origin);
+      addLog('out', message);
+    }
+
+    function setConnected(connected) {
+      dot.className = 'dot ' + (connected ? 'on' : 'off');
+      status.textContent = connected
+        ? 'connected — live edit is working'
+        : 'no connection (no liveEditReady yet)';
+    }
+
+    // The bridge answers liveEditPing with liveEditReady, and also announces
+    // liveEditReady on boot. openEdit arrives when a pencil button is clicked.
     window.addEventListener('message', (ev) => {
-      const el = document.getElementById('messages');
-      const p = document.createElement('pre');
-      p.textContent = 'message from iframe: ' + JSON.stringify({ origin: ev.origin, data: ev.data });
-      el.appendChild(p);
+      if (ev.source !== frame.contentWindow) return;
+      addLog('in', ev.data);
+      if (ev.data?.action === 'liveEditReady') setConnected(true);
     });
+
+    // Read the editable blocks straight out of the preview document so the
+    // scrollTo dropdown always matches the demo page.
+    function collectUids() {
+      uidSelect.innerHTML = '';
+      const doc = frame.contentDocument;
+      const nodes = doc ? doc.querySelectorAll('[data-flyo-uid]') : [];
+      nodes.forEach((el) => {
+        const option = document.createElement('option');
+        option.value = el.dataset.flyoUid;
+        option.textContent = el.dataset.flyoUid;
+        uidSelect.appendChild(option);
+      });
+    }
+
+    frame.addEventListener('load', () => {
+      setConnected(false);
+      collectUids();
+      // Probe the freshly booted page, exactly like the editor does.
+      setTimeout(() => send({ action: 'liveEditPing' }), 100);
+    });
+
+    document.getElementById('ping').onclick = () => send({ action: 'liveEditPing' });
+    document.getElementById('refresh').onclick = () => send({ action: 'pageRefresh' });
+    document.getElementById('scroll').onclick = () => {
+      if (!uidSelect.value) return;
+      send({ action: 'scrollTo', data: { item: { uid: uidSelect.value } } });
+    };
+    document.getElementById('clear').onclick = () => {
+      log.innerHTML = '<div class="empty">Cleared.</div>';
+    };
   </script>
 </body>
 </html>
