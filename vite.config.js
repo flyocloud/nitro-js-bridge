@@ -23,6 +23,10 @@ const demoAtRoot = {
 
 // https://vitejs.dev/guide/build.html#library-mode
 export default defineConfig({
+  // vitest only owns the unit tests; /e2e belongs to playwright.
+  test: {
+    include: ['src/**/*.test.ts'],
+  },
   server: {
     port: 5174,
     strictPort: true,

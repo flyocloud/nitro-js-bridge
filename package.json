@@ -17,9 +17,11 @@
     "dev": "vite",
     "preview": "vite --open",
     "build": "tsc && vite build",
-    "test": "vitest --run"
+    "test": "vitest --run",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@types/node": "^20.9.4",
     "typescript": "^5.3.2",
     "vite": "^5.0.0",

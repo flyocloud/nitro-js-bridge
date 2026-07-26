@@ -77,12 +77,31 @@ document.querySelectorAll('[data-flyo-uid]').forEach(element => {
 
 #### Visual Feedback
 
-When embedded in Flyo's preview iframe, `highlightAndClick()` provides:
-- Hover effect (dashed blue border)
-- Cursor change to pointer
-- Smooth transitions for better UX
+When embedded in Flyo's preview iframe, hovering a registered block fades in:
+- a highlight ring around the block, clipped to the part of it that is actually visible
+- a pencil button on the block's top-left edge — outside the block if it is too small to hold it — that opens the block in the editor
 
-The visual feedback only appears when the website is embedded in Flyo's preview iframe.
+Both appear after a short hover delay and fade out again when you leave, with a grace period so you can move from the block to the pencil. All blocks on the page share a single ring and a single button, so nested blocks never fight over the hover: the innermost one wins.
+
+#### It cannot break your design
+
+The overlay is a guest in your page and behaves like one:
+
+- **Your elements are never modified** — no style, class, attribute, listener or child node is added to the block it points at. The ring is drawn next to your DOM, not in it.
+- **Nothing is added to `<body>`.** The overlay is a single `<flyo-edit-overlay>` element on `<html>`, so selectors like `body > :last-child` keep matching what you expect, and `div`/`button` rules never match ours.
+- **Your CSS cannot leak in and ours cannot leak out**: ring and pencil live in a shadow root, immune even to `!important` resets. No stylesheet is injected into your page, so a strict `style-src` CSP stays quiet.
+- **No layout impact**: the mount is `position: fixed` with a zero-size box, so page layout, scroll height and scrollbars are untouched.
+- **Your interactions stay yours**: the ring is `pointer-events: none`, every listener is passive and read-only (no `preventDefault`, no `stopPropagation`), and the pencil is kept out of your tab order.
+- Hidden in print, and it skips the fades when the visitor prefers reduced motion.
+- `cleanup()` removes the node, the listeners, the timers and the observer — nothing is left behind.
+
+Nothing of this exists outside the preview iframe: on a live site `highlightAndClick()` adds no listeners and no elements, and returns a plain click handler (calling `open()`) instead of a cleanup function.
+
+Verified in Chromium, Firefox and WebKit (Safari's engine) by the playwright suite in [e2e/](e2e/), which runs on every push as the `browser-tests` CI job. Locally: `npm run test:e2e`, after `npx playwright install chromium firefox webkit` once. It reuses a dev server already on port 5174, or set `PLAYWRIGHT_PORT` if that port is taken.
+
+The look and feel is tuned in the `TIMING` and `LOOK` constants at the top of [`src/highlightAndClick.ts`](src/highlightAndClick.ts) — e.g. `TIMING.showDelay` for how long a block has to be hovered before the overlay appears.
+
+Run `npm run dev` and open <http://localhost:5174/> for a demo editor whose preview covers the awkward cases (tiny, nested, clipped, scrolled, sticky, fixed, rotated, shadow DOM, …).
 
 ### reload()
 

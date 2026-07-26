@@ -42,3 +42,54 @@ jobs:
             ./**/test-results/**
             npm-debug.log
             yarn-error.log
+
+  # The overlay must not disturb the sites the bridge is embedded in, which only
+  # a real browser can tell us. Drives demo/ with a real mouse in all three
+  # engines; see e2e/overlay.spec.js.
+  browser-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Resolve playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache browsers
+        id: browser-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install browsers
+        if: steps.browser-cache.outputs.cache-hit != 'true'
+        run: yarn playwright install --with-deps chromium firefox webkit
+
+      - name: Install browser system dependencies
+        if: steps.browser-cache.outputs.cache-hit == 'true'
+        run: yarn playwright install-deps chromium firefox webkit
+
+      - name: Run browser tests
+        run: yarn test:e2e
+
+      - name: Upload playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

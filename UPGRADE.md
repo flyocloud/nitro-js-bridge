@@ -2,6 +2,39 @@
 
 This document describes what integrators (and AI agents working on integrations) need to do when upgrading between versions of `@flyo/nitro-js-bridge`. When a version is not listed, there is nothing to do beyond updating the dependency.
 
+## 1.4.x → 1.5.0
+
+**No breaking changes to the API.** `highlightAndClick(blockUid, element?)` keeps its signature and its return contract (a cleanup function inside the editor iframe, the plain `open()` click handler outside of it). Its implementation and its appearance changed substantially, and it is now guaranteed not to interfere with the website it runs in.
+
+### What's new
+
+1. **The live-edit hover affordance was rebuilt.** Hovering an editable block now fades in a highlight ring around the block plus the pencil button on its top-left edge; both fade out again when you leave, with a grace period so you can travel from the block to the pencil. Previously there was no highlight at all (despite the function's name and the old README), the button appeared and disappeared instantly, and its "hover pad" for small elements was dead code that could never fire.
+
+2. **One overlay per page instead of two nodes per block.** All registered blocks share a single ring and a single button. Nested editable blocks therefore no longer produce overlapping buttons that fight each other — the innermost block under the pointer wins — and a page with 500 blocks adds one DOM node instead of 1000.
+
+3. **The overlay cannot disturb the website any more.** It is a single `<flyo-edit-overlay>` element mounted on `<html>` (not `<body>`, so `body > :last-child` keeps matching what the site's CSS expects), holding a shadow root, `position: fixed` with a zero-size box. Concretely:
+   - no style, class, attribute, listener or child node is ever put on your elements,
+   - your CSS cannot restyle the overlay (not even `button { display: none !important }`) and no stylesheet of ours is injected into your page, so a strict `style-src` CSP stays quiet,
+   - page layout, scroll height and scrollbars are untouched,
+   - the ring is `pointer-events: none` and all listeners are passive and read-only (no `preventDefault()`, no `stopPropagation()` on your events), so hovers, clicks, cursors and scrolling performance stay exactly as they were,
+   - the pencil stays out of your tab order, is hidden in print, and skips its fades when the visitor prefers reduced motion.
+
+4. **The overlay stays where the block actually is.** It re-reads the block every frame while visible, so it follows scrolling, resizing, `:hover` transitions on the block itself (including padding-only growth and `transform` shifts) and any reflow around it. It hides itself when the block is scrolled out of an `overflow` container, clipped away, detached from the DOM or off-screen — previously it could float over unrelated content in those cases. The ring is clipped to the part of the block that is really visible.
+
+5. **Verified against the awkward cases.** Tiny, nested, clipped, scrolled-out, sticky, fixed, scaled, rotated, zero-height, table-cell, SVG and shadow-DOM blocks, blocks under a maximum-`z-index` site layer, and blocks that resize, move or vanish under the pointer — driven with a real mouse in Chromium, Firefox and WebKit (`npm run test:e2e`, new `browser-tests` CI job), plus the demo under `demo/` and 74 unit tests.
+
+### What integrations need to do
+
+**Nothing but update the dependency** — no code changes in any integration, and the editor side needs no coordination. The table from 1.4.0 applies unchanged: npm-based integrations (`@flyo/nitro-next`, `@flyo/nitro-vue3`, `@flyo/nitro-nuxt`, `@flyo/nitro-astro`) update the dependency and redeploy, CDN-based ones (`flyo/nitro-laravel`, `flyo/nitro-yii2`, custom `@1` script tags) pick 1.5.0 up automatically once the CDN cache refreshes.
+
+### Behavior notes during rollout
+
+- **The pencil no longer appears instantly.** A block has to stay hovered for ~0.6s before ring and pencil fade in. This is deliberate (it stops the overlay flickering while the mouse crosses the page) and is the one difference an editor will notice immediately. All timings live in the `TIMING` constant at the top of `src/highlightAndClick.ts`.
+- **If you styled the old pencil button from your site's CSS, that no longer works.** The button used to be a plain `<button>` in `<body>`; it now lives in a closed-off shadow tree by design, and the appearance is configured in the bridge's `LOOK` constant instead.
+- Blocks no longer receive `mouseenter`/`mouseleave` listeners; hover is resolved from one passive, capturing `pointerover` listener on `document`. Integrations that removed those listeners themselves (none do) have nothing left to remove.
+- Blocks whose element is destroyed without calling `cleanup()` no longer leak overlay nodes — the shared overlay hides itself and is reused.
+- Requires shadow DOM (`attachShadow`), i.e. any current Chrome, Firefox, Safari or Edge. There is a plain fallback if it is missing, and outside the editor iframe `highlightAndClick()` still touches nothing at all.
+
 ## 1.3.x → 1.4.0
 
 **No breaking changes.** All existing functions keep their signatures and behavior. Updating is recommended for every live-edit integration because the Flyo editor now probes the preview connection.

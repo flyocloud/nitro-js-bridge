@@ -5,82 +5,266 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Nitro Demo Preview</title>
   <style>
-    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 20px; }
-    h3 { margin-top: 28px; color: #52525b; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
-    .block { padding: 18px; margin: 12px 0; background: #fff; border: 1px dashed #e4e4e7; }
-    .hover-card { transition: background-color 0.3s, transform 0.3s; cursor: pointer; }
-    .hover-card:hover { background-color: #f0f0f0; transform: translateY(-5px); }
-    .boot { font-size: 12px; color: #71717a; }
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      margin: 0;
+      padding: 20px 20px 120px;
+      color: #18181b;
+      background: #fafafa;
+    }
+    h2 { font-size: 16px; margin: 0 0 4px; }
+    .intro { font-size: 12px; color: #71717a; max-width: 62ch; line-height: 1.5; }
+    .intro code { background: #f4f4f5; padding: 1px 4px; border-radius: 3px; }
+
+    /* One scenario per case, with a note on what it is meant to break. */
+    .case { margin-top: 26px; }
+    .case > h3 {
+      font: 600 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #7c3aed;
+      margin: 0 0 2px;
+    }
+    .case > p { font-size: 12px; color: #71717a; margin: 0 0 8px; }
+
+    .block { padding: 18px; background: #fff; border: 1px dashed #d4d4d8; border-radius: 4px; }
+    .block + .block { margin-top: 10px; }
+    .frame { border: 1px solid #e4e4e7; border-radius: 4px; background: #fff; }
+    .hover-card { transition: background-color 0.3s, transform 0.3s; }
+    .hover-card:hover { background-color: #f4f4f5; transform: translateY(-4px); }
+    .grow { transition: padding 0.25s ease; }
+    .grow:hover { padding: 48px 18px; }
+    .dot { width: 2px; height: 2px; background: #0b72ff; margin: 12px auto; }
+    table { border-collapse: collapse; width: 100%; background: #fff; }
+    td, th { border: 1px solid #e4e4e7; padding: 10px; font-size: 13px; text-align: left; }
+    button.site { font: inherit; font-size: 12px; padding: 4px 8px; }
   </style>
 </head>
 <body>
   <h2>Embedded Preview</h2>
-  <p class="boot">Every element with a <code>data-flyo-uid</code> gets <code>highlightAndClick()</code>. Hover one to
-    see the pencil overlay, click it to send an <code>openEdit</code> message to the editor panel.</p>
+  <p class="intro">
+    Every element with a <code>data-flyo-uid</code> is registered with
+    <code>highlightAndClick()</code>. Hover one: after a short delay the highlight ring and the
+    pencil fade in, click the pencil to send <code>openEdit</code> to the editor panel. The whole
+    page shares a single ring + button, so the cases below are really about whether the overlay
+    lands on the right box — and disappears when it should.
+  </p>
 
-  <h3>Plain blocks</h3>
-  <div class="block" data-flyo-uid="uid-a">Block A — hover me and click the pencil</div>
-  <div class="block" data-flyo-uid="uid-b" style="height:500px">Block B — a tall one</div>
-  <div class="block" data-flyo-uid="uid-c">Block C</div>
-  <div class="block" data-flyo-uid="uid-x" style="background-color: aquamarine; height: 800px;">Block X — very tall</div>
+  <div class="case">
+    <h3>Plain blocks</h3>
+    <p>The normal case: roomy blocks keep the pencil inside their top-left corner.</p>
+    <div class="block" data-flyo-uid="uid-a">Block A — hover me and click the pencil</div>
+    <div class="block" data-flyo-uid="uid-b" style="height:320px">Block B — a tall one</div>
+    <div class="block" data-flyo-uid="uid-x" style="background:#7dd3c0;height:600px">Block X — very tall</div>
+  </div>
 
-  <h3>Tiny element</h3>
-  <div class="block">
-    <div class="flyo-preview-highlight" data-flyo-uid="uid-hr">
-      <hr style="border:0;height:3px;background:#0b72ff;max-width:50px;margin:8px auto" />
+  <div class="case">
+    <h3>Tiny targets</h3>
+    <p>Too small to hold the pencil: it has to move outside, and must not cover the content.</p>
+    <div class="block">
+      <div data-flyo-uid="uid-hr"><hr style="border:0;height:3px;background:#0b72ff;max-width:50px;margin:8px auto" /></div>
+    </div>
+    <div class="block"><div class="dot" data-flyo-uid="uid-tiny-px"></div></div>
+    <div class="block">
+      A 2px dot right at the left edge:
+      <div class="dot" data-flyo-uid="uid-tiny-edge" style="margin:12px 0"></div>
     </div>
   </div>
 
-  <h3>Background image block (may clip overlay if positioned inside)</h3>
-  <div class="block" data-flyo-uid="uid-image" style="position:relative;height:160px;padding:0;overflow:hidden;">
-    <svg viewBox="0 0 800 300" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">
-      <rect width="800" height="300" fill="#3f3f46" />
-    </svg>
-    <div data-flyo-uid="uid-image-content" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;">
-      <strong>Image block — hover center area</strong>
+  <div class="case">
+    <h3>Nested blocks, three deep</h3>
+    <p>Each level is its own block. The innermost one under the pointer must win — the outer ones
+      may never fight over it.</p>
+    <div class="block" data-flyo-uid="uid-nest-1">
+      outer
+      <div class="block" data-flyo-uid="uid-nest-2" style="margin-top:10px">
+        middle
+        <div class="block" data-flyo-uid="uid-nest-3" style="margin-top:10px">
+          inner — <strong>hover this text</strong>, the ring must hug the inner box only
+        </div>
+      </div>
     </div>
   </div>
 
-  <h3>Card with link</h3>
-  <div class="block" data-flyo-uid="uid-card-link">
-    <div style="padding: 20px; border: 1px solid #ccc;">
-      <h4>Card Title</h4>
-      <p>Some content here. <a href="#" onclick="alert('Link clicked!'); return false;">Click me</a></p>
+  <div class="case">
+    <h3>Inline text spanning lines</h3>
+    <p>An inline block reports one big union box, so the ring is bigger than the visible text.
+      Expected, but worth seeing.</p>
+    <div class="block" style="max-width:38ch">
+      Lorem ipsum <span data-flyo-uid="uid-inline">dolor sit amet consectetur adipisicing elit, sed
+      do eiusmod tempor incididunt</span> ut labore et dolore.
     </div>
   </div>
 
-  <h3>Card with hover effects</h3>
-  <div class="block hover-card" data-flyo-uid="uid-card-hover">
-    <div style="padding: 20px; border: 1px solid #ccc;">
-      <h4>Hover Me</h4>
-      <p>This card has hover effects.</p>
+  <div class="case">
+    <h3>Zero height &amp; empty blocks</h3>
+    <p>A block with width but no height, and one with no box at all. The second must show nothing.</p>
+    <div class="block" style="padding:0">
+      <div data-flyo-uid="uid-zero-height" style="height:0;background:#0b72ff"></div>
+      <div style="font-size:12px;color:#a1a1aa;padding:10px">↑ 0px tall, full width (hover the seam)</div>
+    </div>
+    <div class="block"><span data-flyo-uid="uid-empty"></span><span style="font-size:12px;color:#a1a1aa">empty inline block — no box, no overlay</span></div>
+  </div>
+
+  <div class="case">
+    <h3>Clipped by overflow: hidden</h3>
+    <p>The child sticks out of its container. The ring must stop at the clip, not at the child's own
+      rect.</p>
+    <div class="frame" style="overflow:hidden;height:90px;position:relative">
+      <div data-flyo-uid="uid-clipped" style="position:absolute;left:70%;top:55%;width:240px;height:140px;background:#f4f4f5;padding:8px;font-size:12px">
+        Clipped child — taller than my container, so I can never be shown whole
+      </div>
     </div>
   </div>
 
-  <h3>Transformed / scaled parent</h3>
-  <div class="block" style="transform:scale(0.9);transform-origin:0 0;">
-    <div data-flyo-uid="uid-scaled" style="padding:18px;background:#f9fafb">Scaled child — hover me</div>
+  <div class="case">
+    <h3>Absolute child escaping a static clipper</h3>
+    <p>The container is <code>overflow:hidden</code> but <code>position:static</code>, so it does not
+      clip an absolutely positioned child. The ring must follow the child, not the container.</p>
+    <div class="frame" style="overflow:hidden;height:70px">
+      <div data-flyo-uid="uid-escapes" style="position:absolute;margin-left:24px;margin-top:20px;width:200px;background:#fef3c7;padding:8px;font-size:12px">
+        Absolute, not clipped
+      </div>
+    </div>
   </div>
 
-  <h3>Overflow hidden clipping</h3>
-  <div class="block" style="overflow:hidden;height:80px;position:relative;">
-    <div data-flyo-uid="uid-clipped" style="position:absolute;left:70%;top:60%;width:200px;height:60px;background:#eee">Clipped child (partially outside)</div>
+  <div class="case">
+    <h3>Inside a scroll container</h3>
+    <p>Scroll the box to move the block out of view while it is hovered: the overlay has to vanish
+      instead of floating over the page.</p>
+    <div class="frame" style="height:120px;overflow:auto">
+      <div style="height:340px;padding:14px">
+        <div data-flyo-uid="uid-scroll" style="margin-top:150px;background:#f4f4f5;padding:12px">
+          Hover me, then scroll this box
+        </div>
+      </div>
+    </div>
   </div>
 
-  <h3>Rotated element</h3>
-  <div class="block">
-    <div data-flyo-uid="uid-rotated" style="display:inline-block;transform:rotate(-8deg);padding:6px;background:#fff">Rotated element</div>
+  <div class="case">
+    <h3>Horizontal scroll container</h3>
+    <p>Same, sideways.</p>
+    <div class="frame" style="overflow-x:auto;white-space:nowrap;padding:14px">
+      <div data-flyo-uid="uid-hscroll-a" style="display:inline-block;width:260px;background:#f4f4f5;padding:12px">card 1</div>
+      <div data-flyo-uid="uid-hscroll-b" style="display:inline-block;width:260px;background:#f4f4f5;padding:12px;margin-left:10px">card 2</div>
+      <div data-flyo-uid="uid-hscroll-c" style="display:inline-block;width:260px;background:#f4f4f5;padding:12px;margin-left:10px">card 3 — scroll right</div>
+    </div>
   </div>
 
-  <h3>Very tiny pixels</h3>
-  <div class="block">
-    <div data-flyo-uid="uid-tiny-px" style="width:2px;height:2px;background:#0b72ff;margin:12px auto"></div>
+  <div class="case">
+    <h3>Sticky block</h3>
+    <p>Sticks to the top of the page while scrolling; the overlay has to stick with it.</p>
+    <div data-flyo-uid="uid-sticky" style="position:sticky;top:0;z-index:5;background:#e9d5ff;padding:12px;font-size:13px">
+      Sticky bar — scroll the page with this hovered
+    </div>
   </div>
 
-  <h3>Scroll container</h3>
-  <div class="block" style="height:120px;overflow:auto;padding:0">
-    <div style="height:300px;padding:18px">
-      <div data-flyo-uid="uid-scroll" style="margin-top:220px;background:#fff;padding:12px">Scroll down to reveal target</div>
+  <div class="case">
+    <h3>Transformed ancestors</h3>
+    <p>Scaled and rotated boxes. The ring is axis-aligned, so it wraps the rotated box rather than
+      tilting with it.</p>
+    <div class="block" style="transform:scale(0.9);transform-origin:0 0">
+      <div data-flyo-uid="uid-scaled" style="padding:14px;background:#f4f4f5">Inside a scale(0.9) parent</div>
+    </div>
+    <div class="block">
+      <div data-flyo-uid="uid-rotated" style="display:inline-block;transform:rotate(-8deg);padding:8px;background:#f4f4f5">Rotated -8°</div>
+    </div>
+  </div>
+
+  <div class="case">
+    <h3>Block that resizes while hovered</h3>
+    <p>Its <em>padding</em> grows on hover, so its box changes while its content box does not — a
+      <code>ResizeObserver</code> would see nothing here. The ring has to grow with it.</p>
+    <div class="block grow" data-flyo-uid="uid-grow">Hover me — I get taller</div>
+  </div>
+
+  <div class="case">
+    <h3>Block that moves itself while hovered</h3>
+    <p>Lifted by <code>transform</code> on hover: no box changes at all, only where it is painted.
+      The ring has to follow anyway.</p>
+    <div class="block hover-card" data-flyo-uid="uid-lift">Hover me — I lift by 4px</div>
+  </div>
+
+  <div class="case">
+    <h3>Block that disappears while hovered</h3>
+    <p>Removed from the DOM under the pointer. The overlay must not survive its block.</p>
+    <div class="block" data-flyo-uid="uid-vanish">
+      Hover me, then <button class="site" onclick="this.closest('[data-flyo-uid]').remove()">remove this block</button>
+    </div>
+  </div>
+
+  <div class="case">
+    <h3>Under the highest possible site layer</h3>
+    <p>The site covers the whole block with <code>z-index: 2147483647</code>. The pencil still has to
+      be on top and clickable.</p>
+    <div class="block" data-flyo-uid="uid-under-layer" style="position:relative;height:110px">
+      Block under a site overlay
+      <div style="position:absolute;top:0;right:0;bottom:0;left:0;z-index:2147483647;background:rgba(24,24,27,0.8);color:#fff;padding:8px;font-size:12px">
+        site layer, z-index 2147483647 (max)
+      </div>
+    </div>
+  </div>
+
+  <div class="case">
+    <h3>Flush against the viewport edges</h3>
+    <p>No room above or to the left, so the pencil has to be clamped into the viewport.</p>
+    <div style="margin:0 -20px">
+      <div data-flyo-uid="uid-edge-left" style="background:#dbeafe;padding:12px;font-size:13px">Full bleed, touching the left edge</div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin:10px -20px 0">
+      <div data-flyo-uid="uid-edge-right" style="background:#dbeafe;padding:12px;font-size:13px">Touching the right edge</div>
+    </div>
+  </div>
+
+  <div class="case">
+    <h3>Table cells</h3>
+    <p>Cells are not normal boxes; hover them anyway.</p>
+    <table>
+      <tr><th data-flyo-uid="uid-th">Header cell</th><th>Plain</th></tr>
+      <tr><td data-flyo-uid="uid-td">Body cell</td><td>Plain</td></tr>
+    </table>
+  </div>
+
+  <div class="case">
+    <h3>SVG as the block</h3>
+    <p>Not an <code>HTMLElement</code>, so anything assuming HTML-only APIs breaks here.</p>
+    <div class="block" style="padding:8px">
+      <svg data-flyo-uid="uid-svg" width="120" height="60" viewBox="0 0 120 60">
+        <rect width="120" height="60" rx="6" fill="#c7d2fe" />
+        <text x="60" y="34" text-anchor="middle" font-size="12" fill="#3730a3">svg block</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="case">
+    <h3>Inside a shadow root</h3>
+    <p>Hover events are retargeted to the shadow host, so the block can only be resolved through
+      <code>composedPath()</code>. Registered by hand, since the page query cannot see into the
+      shadow tree.</p>
+    <div class="block" style="padding:0"><div id="shadow-host"></div></div>
+  </div>
+
+  <div class="case">
+    <h3>Blocks with their own interactions</h3>
+    <p>The overlay must not steal the link, the cursor or the hover effect.</p>
+    <div class="block" data-flyo-uid="uid-card-link">
+      <h4 style="margin:0 0 6px">Card with a link</h4>
+      <p style="margin:0;font-size:13px">Some content. <a href="#" onclick="alert('Link clicked!'); return false;">Click me</a></p>
+    </div>
+    <div class="block hover-card" data-flyo-uid="uid-card-hover">
+      <h4 style="margin:0 0 6px">Card with a hover effect</h4>
+      <p style="margin:0;font-size:13px">Lifts and greys out on hover.</p>
+    </div>
+  </div>
+
+  <div class="case">
+    <h3>Fixed overlay of the site itself</h3>
+    <p>Pinned to the bottom of the viewport, never scrolled. The ring must not be clipped by the
+      containers it sits in.</p>
+    <div data-flyo-uid="uid-fixed" style="position:fixed;left:16px;bottom:16px;z-index:10;background:#18181b;color:#fafafa;padding:10px 12px;border-radius:6px;font-size:12px">
+      Fixed badge block
     </div>
   </div>
 
@@ -94,9 +278,19 @@
     reload();
     scrollTo();
 
+    // Kept on window so the playwright suite in /e2e can unregister everything.
+    window.flyoDemoCleanups = [];
+
     document.querySelectorAll('[data-flyo-uid]').forEach((el) => {
-      highlightAndClick(el.dataset.flyoUid, el);
+      window.flyoDemoCleanups.push(highlightAndClick(el.dataset.flyoUid, el));
     });
+
+    // Shadow DOM scenario: build a small tree and register the block inside it.
+    const shadow = document.getElementById('shadow-host').attachShadow({ mode: 'open' });
+    shadow.innerHTML =
+      '<style>.card{font:13px system-ui;background:#fff;padding:18px;border:1px dashed #d4d4d8;border-radius:4px}</style>' +
+      '<div class="card" id="inner">Block inside a shadow root — hover me</div>';
+    window.flyoDemoCleanups.push(highlightAndClick('uid-shadow', shadow.getElementById('inner')));
   </script>
 </body>
 </html>
